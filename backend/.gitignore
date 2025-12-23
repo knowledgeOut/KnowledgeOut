@@ -1,0 +1,201 @@
+# ============================================
+# OS 관련 파일
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# ============================================
+# IDE 관련 파일
+# ============================================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# ============================================
+# Spring Boot / Gradle 관련
+# ============================================
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+gradle-app.setting
+!gradle-wrapper.jar
+
+# Spring Boot
+*.class
+*.log
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+
+# 빌드 출력
+out/
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ============================================
+# 테스트 관련 (전부 제외)
+# ============================================
+# 테스트 소스 코드
+**/src/test/
+**/test/
+**/tests/
+**/__tests__/
+**/*.test.*
+**/*.spec.*
+**/*Test.*
+**/*Tests.*
+**/*_test.*
+**/*_spec.*
+
+# 테스트 결과 및 리포트
+**/test-results/
+**/test-output/
+**/coverage/
+**/.nyc_output/
+**/junit.xml
+**/TEST-*.xml
+**/surefire-reports/
+**/failsafe-reports/
+**/test-reports/
+
+# 테스트 실행 파일
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
+**/.tox/
+**/.hypothesis/
+
+# ============================================
+# Next.js / Frontend 관련
+# ============================================
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output/
+
+# Next.js
+.next/
+out/
+dist/
+build/
+
+# Production
+*.tsbuildinfo
+next-env.d.ts
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Local env files
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+
+# ============================================
+# 환경 변수 및 설정 파일
+# ============================================
+# 환경 변수
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env*.local
+*.env
+
+# 설정 파일 (민감 정보 포함 가능)
+**/application-local.yml
+**/application-local.properties
+**/application-dev.yml
+**/application-dev.properties
+**/application-prod.yml
+**/application-prod.properties
+**/secrets.yml
+**/secrets.properties
+
+# ============================================
+# 로그 파일
+# ============================================
+*.log
+logs/
+*.log.*
+log/
+
+# ============================================
+# 임시 파일
+# ============================================
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+tmp/
+temp/
+
+# ============================================
+# Docker 관련
+# ============================================
+# Docker Compose override files
+docker-compose.override.yml
+docker-compose.*.local.yml
+
+# ============================================
+# 기타
+# ============================================
+# 백업 파일
+*.bak
+*.backup
+*.old
+
+# 압축 파일 (필요시 제외)
+# *.zip
+# *.tar
+# *.tar.gz
+
+# 패키지 매니저
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+!backend/*
