@@ -14,7 +14,7 @@ Thumbs.db
 # IDE 관련 파일
 # ============================================
 # IntelliJ IDEA
-.idea/
+backend/.idea/
 *.iml
 *.iws
 *.ipr
