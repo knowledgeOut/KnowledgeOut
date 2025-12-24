@@ -3,9 +3,10 @@ package org.example.backend.domain.member;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.example.backend.domain.answer.Answer;
+//import org.example.backend.domain.answer.Answer;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "members")
 public class Member {
     @Id
@@ -45,11 +47,11 @@ public class Member {
     @Column(name = "modified_at")
     private LocalDateTime modifiedAt;
 
-    @OneToMany(mappedBy = "member")
-    private List<Qusetion> questions = new ArrayList<>();
+//    @OneToMany(mappedBy = "member")
+//    private List<Question> questions = new ArrayList<>();
 
-    @OneToMany(mappedBy = "member")
-    private List<Answer> answers = new ArrayList<>();
+//    @OneToMany(mappedBy = "member")
+//    private List<Answer> answers = new ArrayList<>();
 
     public static Member create(String email, String password, String nickname) {
         Member member = new Member();
