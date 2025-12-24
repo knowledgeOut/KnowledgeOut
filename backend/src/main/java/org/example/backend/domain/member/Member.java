@@ -46,7 +46,7 @@ public class Member {
     private LocalDateTime modifiedAt;
 
     @OneToMany(mappedBy = "member")
-    private List<Qusetion> questions = new ArrayList<>();
+    private List<Question> questions = new ArrayList<>();
 
     @OneToMany(mappedBy = "member")
     private List<Answer> answers = new ArrayList<>();
