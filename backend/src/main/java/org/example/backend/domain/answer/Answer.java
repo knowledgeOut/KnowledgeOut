@@ -1,3 +1,4 @@
+/*
 package org.example.backend.domain.answer;
 
 import jakarta.persistence.Entity;
@@ -12,5 +13,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Table(name = "answers")
 public class Answer {
-    @Id
+
 }
+
+
+ */

@@ -44,12 +44,12 @@ public class Member {
     @LastModifiedDate
     @Column(name = "modified_at")
     private LocalDateTime modifiedAt;
-
-    @OneToMany(mappedBy = "member")
-    private List<Question> questions = new ArrayList<>();
-
-    @OneToMany(mappedBy = "member")
-    private List<Answer> answers = new ArrayList<>();
+//
+//    @OneToMany(mappedBy = "member")
+//    private List<Question> questions = new ArrayList<>();
+//
+//    @OneToMany(mappedBy = "member")
+//    private List<Answer> answers = new ArrayList<>();
 
     public static Member create(String email, String password, String nickname) {
         Member member = new Member();
