@@ -3,7 +3,6 @@ package org.example.backend.domain.member;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-//import org.example.backend.domain.answer.Answer;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -13,9 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor
-@EntityListeners(AuditingEntityListener.class)
 @Table(name = "members")
 public class Member {
     @Id
@@ -47,11 +46,11 @@ public class Member {
     @Column(name = "modified_at")
     private LocalDateTime modifiedAt;
 
-//    @OneToMany(mappedBy = "member")
-//    private List<Question> questions = new ArrayList<>();
-
-//    @OneToMany(mappedBy = "member")
-//    private List<Answer> answers = new ArrayList<>();
+    // @OneToMany(mappedBy = "member")
+    // private List<Question> questions = new ArrayList<>();
+    //
+    // @OneToMany(mappedBy = "member")
+    // private List<Answer> answers = new ArrayList<>();
 
     public static Member create(String email, String password, String nickname) {
         Member member = new Member();
@@ -71,5 +70,22 @@ public class Member {
 
     public boolean isActive() {
         return this.status.equals(MemberStatus.ACTIVE);
+    }
+
+    // 사용자 정보 수정
+    public void update(String email, String nickname) {
+        if (email != null && !email.isBlank()) {
+            this.email = email;
+        }
+        if (nickname != null && !nickname.isBlank()) {
+            this.nickname = nickname;
+        }
+    }
+
+    // 비밀번호 변경
+    public void updatePassword(String password) {
+        if (password != null && !password.isBlank()) {
+            this.password = password;
+        }
     }
 }
