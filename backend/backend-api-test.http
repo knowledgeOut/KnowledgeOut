@@ -1,0 +1,101 @@
+### KnowledgeOut API 테스트 파일
+### IntelliJ IDEA에서 각 요청 옆의 실행 버튼(▶)을 클릭하여 테스트할 수 있습니다.
+
+@baseUrl = http://localhost:8080
+@apiPath = /api/knowledgeout/members
+@memberId = 3
+
+### ============================================
+### 마이페이지 조회 API
+### ============================================
+
+### 1. 마이페이지 조회 (성공 케이스)
+GET {{baseUrl}}{{apiPath}}/mypage?id={{memberId}}
+Content-Type: application/json
+
+### 2. 마이페이지 조회 (id 없음 - 400 에러 예상)
+GET {{baseUrl}}{{apiPath}}/mypage
+Content-Type: application/json
+
+### 3. 마이페이지 조회 (존재하지 않는 id - 400 에러 예상)
+GET {{baseUrl}}{{apiPath}}/mypage?id=999999
+Content-Type: application/json
+
+### ============================================
+### 사용자 정보 수정 API
+### ============================================
+
+### 4. 사용자 정보 수정 - 이메일만 수정
+PUT {{baseUrl}}{{apiPath}}/{{memberId}}
+Content-Type: application/json
+
+{
+  "email": "updated-email@example.com"
+}
+
+### 5. 사용자 정보 수정 - 닉네임만 수정
+PUT {{baseUrl}}{{apiPath}}/{{memberId}}
+Content-Type: application/json
+
+{
+  "nickname": "updated-nickname"
+}
+
+### 6. 사용자 정보 수정 - 비밀번호만 수정
+PUT {{baseUrl}}{{apiPath}}/{{memberId}}
+Content-Type: application/json
+
+{
+  "password": "newPassword123"
+}
+
+### 7. 사용자 정보 수정 - 모든 필드 수정
+PUT {{baseUrl}}{{apiPath}}/{{memberId}}
+Content-Type: application/json
+
+{
+  "email": "full-update@example.com",
+  "nickname": "full-update-nickname",
+  "password": "fullUpdatePassword123"
+}
+
+### 8. 사용자 정보 수정 - 이메일과 닉네임만 수정 (비밀번호 제외)
+PUT {{baseUrl}}{{apiPath}}/{{memberId}}
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "nickname": "testuser"
+}
+
+### 9. 사용자 정보 수정 - 존재하지 않는 id (400 에러 예상)
+PUT {{baseUrl}}{{apiPath}}/999999
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "nickname": "testuser"
+}
+
+### ============================================
+### 테스트 시나리오 예시
+### ============================================
+
+### 시나리오 1: 마이페이지 조회 → 사용자 정보 확인 → 정보 수정 → 다시 조회
+###
+### 1단계: 마이페이지 조회
+GET {{baseUrl}}{{apiPath}}/mypage?id={{memberId}}
+
+###
+### 2단계: 닉네임 수정
+PUT {{baseUrl}}{{apiPath}}/{{memberId}}
+Content-Type: application/json
+
+{
+  "nickname": "새로운닉네임"
+}
+
+###
+### 3단계: 수정 후 다시 조회하여 변경사항 확인
+GET {{baseUrl}}{{apiPath}}/mypage?id={{memberId}}
+
