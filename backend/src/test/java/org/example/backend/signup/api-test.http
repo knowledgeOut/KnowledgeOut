@@ -1,0 +1,9 @@
+### 회원가입 테스트
+POST http://localhost:8080/api/knowledgeout/members/signup
+Content-Type: application/json
+
+{
+  "email": "http-test@example.com",
+  "password": "password1234",
+  "nickname": "유저"
+}
