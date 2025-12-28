@@ -6,6 +6,7 @@ import org.example.backend.domain.question.Question;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @AllArgsConstructor
@@ -16,7 +17,7 @@ public class QuestionResponseDto {
     private int viewCount;
     private int likeCount;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime modifiedAt;
 
     private Long memberId;
     private String memberNickname; 
@@ -26,7 +27,7 @@ public class QuestionResponseDto {
 
     private List<String> tagNames; 
 
-    public static QuestionResponseDto fromEntity(Question question) {
+    public static QuestionResponseDto from(Question question) {
         return new QuestionResponseDto(
             question.getId(),
             question.getTitle(),
@@ -34,12 +35,14 @@ public class QuestionResponseDto {
             question.getViewCount(),
             question.getLikeCount(),
             question.getCreatedAt(),
-            question.getUpdatedAt(),
-            question.getMemberId(),
-            question.getMemberNickname(),
-            question.getCategoryId(),
-            question.getCategoryName(),
-            question.getTagNames()
+            question.getModifiedAt(),
+            question.getMember() != null ? question.getMember().getId() : null,
+            question.getMember() != null ? question.getMember().getNickname() : null,
+            question.getCategory() != null ? question.getCategory().getId() : null,
+            question.getCategory() != null ? question.getCategory().getName() : null,
+            question.getQuestionTags().stream()
+                .map(qt -> qt.getTag().getName())
+                .collect(Collectors.toList())
         );
     }
 }
