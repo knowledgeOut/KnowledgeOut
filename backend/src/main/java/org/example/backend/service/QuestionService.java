@@ -5,14 +5,17 @@ import org.example.backend.domain.question.Question;
 import org.example.backend.domain.question.QuestionTag;
 import org.example.backend.domain.tag.Tag;
 import org.example.backend.dto.request.QuestionRequestDto;
+import org.example.backend.dto.response.QuestionResponseDto;
 import org.example.backend.repository.QuestionRepository;
 import org.example.backend.repository.MemberRepository;
 import org.example.backend.repository.CategoryRepository;
-import org.example.backend.service.TagService;
-import org.example.backend.domain.question.Member;
-import org.example.backend.domain.question.Category;
+import org.example.backend.domain.member.Member;
+import org.example.backend.domain.category.Category;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +51,14 @@ public class QuestionService {
                 question.getQuestionTags().add(questionTag);
             }
         }
+
         return questionRepository.save(question).getId();
+    }
+
+    @Transactional(readOnly = true)
+    public List<QuestionResponseDto> getAllQuestions() {
+        return questionRepository.findAll().stream()
+                .map(QuestionResponseDto::from)
+                .collect(Collectors.toList());
     }
 }
