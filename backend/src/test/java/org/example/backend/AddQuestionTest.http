@@ -1,0 +1,11 @@
+### 질문 등록 테스트 (POST /api/knowledgeout/questions)
+POST http://localhost:8080/api/knowledgeout/questions
+Content-Type: application/json
+
+{
+  "memberId": 1,
+  "categoryId": 1,
+  "title": "JPA 매핑 테이블 질문입니다.",
+  "content": "N:M 관계를 1:N, N:1로 풀어서 설계할 때 장점이 정확히 무엇인가요?",
+  "tagNames": ["JPA", "Spring", "DB"]
+}
