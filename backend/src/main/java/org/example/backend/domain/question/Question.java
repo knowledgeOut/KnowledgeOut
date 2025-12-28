@@ -4,9 +4,13 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.backend.domain.category.Category;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,7 +20,8 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name="questions")
+@EntityListeners(AuditingEntityListener.class)
+@Table(name = "questions")
 public class Question {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,16 +34,19 @@ public class Question {
     private String content;
 
     @ColumnDefault("0")
-    private int viewCount;
+    @Column(nullable = false)
+    private int viewCount = 0;
 
     @ColumnDefault("0")
-    private int likeCount;
+    @Column(nullable = false)
+    private int likeCount = 0;
 
-    @CreationTimestamp
-    @Column(updatable = false)
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
+    @LastModifiedDate
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     // N:1 관계 - 회원
@@ -51,7 +59,7 @@ public class Question {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    // // 1:N 관계 - 답변 (질문 삭제 시 답변도 삭제되는 CascadeType.REMOVE 적용)
+    //    // // 1:N 관계 - 답변 (질문 삭제 시 답변도 삭제되는 CascadeType.REMOVE 적용)
     @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Answer> answers = new ArrayList<>();
 
@@ -59,4 +67,9 @@ public class Question {
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<QuestionTag> questionTags = new ArrayList<>();
 
+    // 연관관계 편의 메서드
+    public void addQuestionTag(QuestionTag questionTag) {
+        this.questionTags.add(questionTag);
+        questionTag.setQuestion(this);
+    }
 }
