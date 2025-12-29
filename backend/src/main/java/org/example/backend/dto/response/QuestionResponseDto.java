@@ -16,6 +16,7 @@ public class QuestionResponseDto {
     private String content;
     private int viewCount;
     private int likeCount;
+    private int answerCount; // [추가] 답변 개수 (프론트엔드 상태 표시용)
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
 
@@ -27,22 +28,26 @@ public class QuestionResponseDto {
 
     private List<String> tagNames; 
 
-    public static QuestionResponseDto from(Question question) {
+    public static QuestionResponseDto fromEntity(Question question) {
         return new QuestionResponseDto(
-            question.getId(),
-            question.getTitle(),
-            question.getContent(),
-            question.getViewCount(),
-            question.getLikeCount(),
-            question.getCreatedAt(),
-            question.getModifiedAt(),
-            question.getMember() != null ? question.getMember().getId() : null,
-            question.getMember() != null ? question.getMember().getNickname() : null,
-            question.getCategory() != null ? question.getCategory().getId() : null,
-            question.getCategory() != null ? question.getCategory().getName() : null,
-            question.getQuestionTags().stream()
-                .map(qt -> qt.getTag().getName())
-                .collect(Collectors.toList())
+                question.getId(),
+                question.getTitle(),
+                question.getContent(),
+                question.getViewCount(),
+                question.getLikeCount(),
+                // question.getAnswers().size(), // [추가] 답변 리스트 크기
+                question.getCreatedAt(),
+                question.getModifiedAt(),
+                // Member 정보
+                question.getMember().getId(),
+                question.getMember().getNickname(),
+                // Category 정보 (Null 처리)
+                question.getCategory() != null ? question.getCategory().getId() : null,
+                question.getCategory() != null ? question.getCategory().getName() : null,
+                // Tag 정보
+                question.getQuestionTags().stream()
+                        .map(qt -> qt.getTag().getName())
+                        .collect(Collectors.toList())
         );
     }
 }

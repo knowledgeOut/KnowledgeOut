@@ -1,31 +1,49 @@
 package org.example.backend.controller;
 
 import lombok.RequiredArgsConstructor;
-// import org.example.backend.domain.question.Question;
 import org.example.backend.dto.request.QuestionRequestDto;
-import org.example.backend.dto.response.MemberResponseDTO;
 import org.example.backend.dto.response.QuestionResponseDto;
 import org.example.backend.service.QuestionService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
-@RequestMapping("/api/knowledgeout")
+@RequestMapping("/api/knowledgeout/questions")
 @RequiredArgsConstructor
 public class QuestionController {
     private final QuestionService questionService;
 
-    @GetMapping("/questions")
-    public ResponseEntity<List<QuestionResponseDto>> getAllQuestions() {
-        List<QuestionResponseDto> questions = questionService.getAllQuestions();
-        return ResponseEntity.ok(questions);
-    }
-
-    @PostMapping("/questions")
-    public ResponseEntity<Long> addQuestion(@RequestBody QuestionRequestDto questionRequestDto) {
-        Long questionId = questionService.addQuestion(questionRequestDto);
+    // 질문 등록
+    @PostMapping
+    public ResponseEntity<Long> createQuestion(
+            @AuthenticationPrincipal User user,
+            @RequestBody QuestionRequestDto request) {
+        Long questionId = questionService.addQuestion(user.getUsername(), request);
         return ResponseEntity.ok(questionId);
     }
+
+    // 질문 목록 조회 (검색 조건 포함)
+    @GetMapping
+    public ResponseEntity<Page<QuestionResponseDto>> getQuestions(
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String tag,
+            @RequestParam(required = false) String status
+    ) {
+        return ResponseEntity.ok(questionService.getQuestions(pageable, category, tag, status));
+    }
+
+    // 질문 상세 조회
+    @GetMapping("/{id}")
+    public ResponseEntity<QuestionResponseDto> getQuestion(@PathVariable Long id) {
+        return ResponseEntity.ok(questionService.getQuestion(id));
+    }
+
+
 }
