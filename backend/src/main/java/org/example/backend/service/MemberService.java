@@ -1,7 +1,7 @@
 package org.example.backend.service;
 
 import org.example.backend.domain.member.Member;
-import org.example.backend.dto.request.MemberUpdateRequestDto;
+import org.example.backend.dto.request.MemberRequestDto;
 import org.example.backend.dto.response.MemberResponseDto;
 import org.example.backend.repository.MemberRepository;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,7 @@ public class MemberService {
         return MemberResponseDto.from(member);
     }
 
-    public MemberResponseDto updateMember(Long id, MemberUpdateRequestDto request) {
+    public MemberResponseDto updateMember(Long id, MemberRequestDto request) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
 

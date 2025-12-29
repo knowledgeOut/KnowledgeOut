@@ -1,7 +1,7 @@
 package org.example.backend.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.backend.dto.request.MemberUpdateRequestDto;
+import org.example.backend.dto.request.MemberRequestDto;
 import org.example.backend.dto.response.MemberResponseDto;
 import org.example.backend.service.MemberService;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +30,7 @@ public class MemberController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MemberResponseDto> updateMember(@PathVariable Long id, @RequestBody MemberUpdateRequestDto request) {
+    public ResponseEntity<MemberResponseDto> updateMember(@PathVariable Long id, @RequestBody MemberRequestDto request) {
         try {
             MemberResponseDto response = memberService.updateMember(id, request);
             return ResponseEntity.ok(response);
