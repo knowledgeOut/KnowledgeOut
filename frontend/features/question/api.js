@@ -1,0 +1,93 @@
+/**
+ * 질문 관련 API 함수
+ */
+
+import apiClient from '../../lib/axios';
+
+/**
+ * 질문 목록 조회
+ * @param {Object} params - { page?, size?, sort? }
+ * @returns {Promise<Object>} 질문 목록
+ */
+export async function getQuestions(params = {}) {
+  try {
+    const queryString = new URLSearchParams(params).toString();
+    const url = queryString ? `/questions?${queryString}` : '/questions';
+    const response = await apiClient.get(url);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || '질문 목록을 불러올 수 없습니다.');
+  }
+}
+
+/**
+ * 질문 상세 조회
+ * @param {string|number} id - 질문 ID
+ * @returns {Promise<Object>} 질문 상세 정보
+ */
+export async function getQuestion(id) {
+  try {
+    const response = await apiClient.get(`/questions/${id}`);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || '질문을 불러올 수 없습니다.');
+  }
+}
+
+/**
+ * 질문 등록
+ * @param {Object} data - { title, content, category?, tags? }
+ * @returns {Promise<Object>} 생성된 질문 정보
+ */
+export async function createQuestion(data) {
+  try {
+    const response = await apiClient.post('/questions', data);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || '질문 등록에 실패했습니다.');
+  }
+}
+
+/**
+ * 질문 수정
+ * @param {string|number} id - 질문 ID
+ * @param {Object} data - { title, content, category?, tags? }
+ * @returns {Promise<Object>} 수정된 질문 정보
+ */
+export async function updateQuestion(id, data) {
+  try {
+    const response = await apiClient.put(`/questions/${id}`, data);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || '질문 수정에 실패했습니다.');
+  }
+}
+
+/**
+ * 질문 삭제
+ * @param {string|number} id - 질문 ID
+ * @returns {Promise<Object>}
+ */
+export async function deleteQuestion(id) {
+  try {
+    const response = await apiClient.delete(`/questions/${id}`);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || '질문 삭제에 실패했습니다.');
+  }
+}
+
+/**
+ * 질문 추천
+ * @param {string|number} id - 질문 ID
+ * @returns {Promise<Object>}
+ */
+export async function likeQuestion(id) {
+  try {
+    const response = await apiClient.post(`/questions/${id}/likes`);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || '추천에 실패했습니다.');
+  }
+}
+

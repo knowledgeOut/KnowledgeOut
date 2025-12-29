@@ -1,0 +1,200 @@
+/**
+ * Axios 인스턴스 설정
+ * 
+ * Note: 현재는 fetch API를 사용하고 있지만,
+ * 향후 Axios로 마이그레이션할 경우를 대비한 구조입니다.
+ */
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/knowledgeout';
+
+/**
+ * 기본 fetch 래퍼 함수
+ * 향후 Axios로 교체 가능하도록 인터페이스 통일
+ */
+export const apiClient = {
+  /**
+   * GET 요청
+   */
+  async get(url, options = {}) {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      credentials: 'include',
+      ...options,
+    });
+
+    if (!response.ok) {
+      let errorMessage = '요청에 실패했습니다.';
+      try {
+        const errorData = await response.json();
+        // Spring Boot 기본 에러 응답 형식 처리
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      } catch (e) {
+        // JSON 파싱 실패 시 상태 코드 기반 메시지
+        if (response.status === 400) {
+          errorMessage = '잘못된 요청입니다.';
+        } else if (response.status === 409) {
+          errorMessage = '이미 존재하는 정보입니다.';
+        } else if (response.status === 500) {
+          errorMessage = '서버 오류가 발생했습니다.';
+        }
+      }
+      const error = new Error(errorMessage);
+      error.response = response;
+      throw error;
+    }
+
+    return response.json();
+  },
+
+  /**
+   * POST 요청
+   */
+  async post(url, data = {}, options = {}) {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+      ...options,
+    });
+
+    if (!response.ok) {
+      let errorMessage = '요청에 실패했습니다.';
+      try {
+        const errorData = await response.json();
+        // Spring Boot 기본 에러 응답 형식 처리
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      } catch (e) {
+        // JSON 파싱 실패 시 상태 코드 기반 메시지
+        if (response.status === 400) {
+          errorMessage = '잘못된 요청입니다.';
+        } else if (response.status === 409) {
+          errorMessage = '이미 존재하는 정보입니다.';
+        } else if (response.status === 500) {
+          errorMessage = '서버 오류가 발생했습니다.';
+        }
+      }
+      const error = new Error(errorMessage);
+      error.response = response;
+      throw error;
+    }
+
+    return response.json();
+  },
+
+  /**
+   * PUT 요청
+   */
+  async put(url, data = {}, options = {}) {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+      ...options,
+    });
+
+    if (!response.ok) {
+      let errorMessage = '요청에 실패했습니다.';
+      try {
+        const errorData = await response.json();
+        // Spring Boot 기본 에러 응답 형식 처리
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      } catch (e) {
+        // JSON 파싱 실패 시 상태 코드 기반 메시지
+        if (response.status === 400) {
+          errorMessage = '잘못된 요청입니다.';
+        } else if (response.status === 409) {
+          errorMessage = '이미 존재하는 정보입니다.';
+        } else if (response.status === 500) {
+          errorMessage = '서버 오류가 발생했습니다.';
+        }
+      }
+      const error = new Error(errorMessage);
+      error.response = response;
+      throw error;
+    }
+
+    return response.json();
+  },
+
+  /**
+   * DELETE 요청
+   */
+  async delete(url, options = {}) {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      credentials: 'include',
+      ...options,
+    });
+
+    if (!response.ok) {
+      let errorMessage = '요청에 실패했습니다.';
+      try {
+        const errorData = await response.json();
+        // Spring Boot 기본 에러 응답 형식 처리
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      } catch (e) {
+        // JSON 파싱 실패 시 상태 코드 기반 메시지
+        if (response.status === 400) {
+          errorMessage = '잘못된 요청입니다.';
+        } else if (response.status === 409) {
+          errorMessage = '이미 존재하는 정보입니다.';
+        } else if (response.status === 500) {
+          errorMessage = '서버 오류가 발생했습니다.';
+        }
+      }
+      const error = new Error(errorMessage);
+      error.response = response;
+      throw error;
+    }
+
+    // DELETE는 응답 본문이 없을 수 있음
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return response.json();
+    }
+    return { success: true };
+  },
+};
+
+export default apiClient;
+

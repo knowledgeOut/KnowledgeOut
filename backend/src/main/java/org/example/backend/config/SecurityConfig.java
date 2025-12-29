@@ -49,7 +49,14 @@ public class SecurityConfig {
                                 "/api/knowledgeout/auth/login"
                         ).permitAll()
 
-                        // 그 외 모든 요청(마이페이지 등)은 인증 필요
+                        // 마이페이지 조회 및 수정은 임시로 허용 (인증 구현 전까지)
+                        // TODO: 인증 기능 구현 후 인증 필요로 변경
+                        .requestMatchers(
+                                "/api/knowledgeout/members/mypage",
+                                "/api/knowledgeout/members/**"
+                        ).permitAll()
+
+                        // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
                 );
 
