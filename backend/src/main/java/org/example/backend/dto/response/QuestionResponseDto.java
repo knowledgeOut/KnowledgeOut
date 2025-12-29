@@ -35,7 +35,7 @@ public class QuestionResponseDto {
                 question.getContent(),
                 question.getViewCount(),
                 question.getLikeCount(),
-                // question.getAnswers().size(), // [추가] 답변 리스트 크기
+                question.getAnswers().size(), // [추가] 답변 리스트 크기
                 question.getCreatedAt(),
                 question.getModifiedAt(),
                 // Member 정보

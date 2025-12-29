@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.backend.domain.answer.Answer;
 import org.example.backend.domain.category.Category;
 import org.example.backend.domain.member.Member;
 import org.hibernate.annotations.ColumnDefault;
@@ -58,9 +59,9 @@ public class Question {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    // // // 1:N 관계 - 답변 (질문 삭제 시 답변도 삭제되는 CascadeType.REMOVE 적용)
-    // @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    // private List<Answer> answers = new ArrayList<>();
+    // // 1:N 관계 - 답변 (질문 삭제 시 답변도 삭제되는 CascadeType.REMOVE 적용)
+    @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Answer> answers = new ArrayList<>();
 
     // // 1:N 관계 - 태그 (중간 테이블 QuestionTag 활용)
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
