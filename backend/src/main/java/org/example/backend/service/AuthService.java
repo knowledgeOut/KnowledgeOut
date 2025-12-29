@@ -2,7 +2,7 @@ package org.example.backend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.backend.domain.member.Member;
-import org.example.backend.dto.request.SignupRequest;
+import org.example.backend.dto.request.SignupRequestDto;
 import org.example.backend.repository.MemberRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public Long signup(SignupRequest request) {
+    public Long signup(SignupRequestDto request) {
         // 1. 중복 검사
         if (memberRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
