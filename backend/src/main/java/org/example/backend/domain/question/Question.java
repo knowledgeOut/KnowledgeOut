@@ -46,8 +46,8 @@ public class Question {
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @Column(name = "modified_at")
+    private LocalDateTime modifiedAt;
 
     // N:1 관계 - 회원
     @ManyToOne(fetch = FetchType.LAZY)
