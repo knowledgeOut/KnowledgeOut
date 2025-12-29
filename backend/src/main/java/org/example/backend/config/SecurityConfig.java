@@ -1,7 +1,13 @@
 package org.example.backend.config;
 
+import lombok.RequiredArgsConstructor;
+import org.example.backend.security.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -18,17 +24,29 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     // 1. [필수] 비밀번호 암호화 빈 (회원가입 서비스에서 사용)
+    private final CustomUserDetailsService userDetailsService;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
+    public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder);
+        return new ProviderManager(authProvider);
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .csrf(csrf -> csrf.disable())
                 // 2. CORS 설정 적용
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
@@ -42,6 +60,9 @@ public class SecurityConfig {
 
                 // 5. URL 권한 설정
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/knowledgeout/members/signup", "/api/knowledgeout/members/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/knowledgeout", "/api/knowledgeout/questions/**").permitAll()
+                        .requestMatchers("/api/knowledgeout/admin/**").hasRole("ADMIN")
                         // 회원가입 및 로그인 경로는 누구나 접근 가능
                         // (로그인 경로도 미리 열어두었습니다)
                         .requestMatchers(
@@ -51,6 +72,14 @@ public class SecurityConfig {
 
                         // 그 외 모든 요청(마이페이지 등)은 인증 필요
                         .anyRequest().authenticated()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/api/knowledgeout/members/logout")
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            response.setStatus(200);
+                        })
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
                 );
 
         return http.build();
@@ -60,6 +89,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
         // 허용할 프론트엔드 도메인 (3000, 3001 둘 다 허용)
         configuration.setAllowedOrigins(Arrays.asList(
