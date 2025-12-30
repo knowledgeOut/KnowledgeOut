@@ -28,7 +28,7 @@ public class MemberResponseDto {
         this.modifiedAt = modifiedAt;
     }
 
-    public static MemberResponseDto from(Member member) {
+    public static MemberResponseDto fromEntity(Member member) {
         return new MemberResponseDto(
                 member.getId(),
                 member.getEmail(),

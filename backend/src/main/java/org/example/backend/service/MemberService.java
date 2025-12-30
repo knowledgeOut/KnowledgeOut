@@ -20,7 +20,7 @@ public class MemberService {
     public MemberResponseDto getMember(Long id) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
-        return MemberResponseDto.from(member);
+        return MemberResponseDto.fromEntity(member);
     }
 
     public MemberResponseDto updateMember(Long id, MemberRequestDto request) {
@@ -49,6 +49,6 @@ public class MemberService {
             member.updatePassword(request.getPassword());
         }
 
-        return MemberResponseDto.from(member);
+        return MemberResponseDto.fromEntity(member);
     }
 }
