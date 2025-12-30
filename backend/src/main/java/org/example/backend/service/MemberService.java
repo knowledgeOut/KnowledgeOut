@@ -1,8 +1,8 @@
 package org.example.backend.service;
 
 import org.example.backend.domain.member.Member;
-import org.example.backend.dto.request.MemberUpdateRequestDTO;
-import org.example.backend.dto.response.MemberResponseDTO;
+import org.example.backend.dto.request.MemberRequestDto;
+import org.example.backend.dto.response.MemberResponseDto;
 import org.example.backend.repository.MemberRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,13 +17,13 @@ public class MemberService {
     }
 
     @Transactional(readOnly = true)
-    public MemberResponseDTO getMember(Long id) {
+    public MemberResponseDto getMember(Long id) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
-        return MemberResponseDTO.from(member);
+        return MemberResponseDto.from(member);
     }
 
-    public MemberResponseDTO updateMember(Long id, MemberUpdateRequestDTO request) {
+    public MemberResponseDto updateMember(Long id, MemberRequestDto request) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
 
@@ -49,6 +49,6 @@ public class MemberService {
             member.updatePassword(request.getPassword());
         }
 
-        return MemberResponseDTO.from(member);
+        return MemberResponseDto.from(member);
     }
 }
