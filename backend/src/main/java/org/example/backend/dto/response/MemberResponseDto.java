@@ -8,7 +8,7 @@ import org.example.backend.domain.member.Role;
 import java.time.LocalDateTime;
 
 @Getter
-public class MemberResponseDTO {
+public class MemberResponseDto {
     private Long id;
     private String email;
     private String nickname;
@@ -17,7 +17,7 @@ public class MemberResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
 
-    private MemberResponseDTO(Long id, String email, String nickname, Role role,
+    private MemberResponseDto(Long id, String email, String nickname, Role role,
                               MemberStatus status, LocalDateTime createdAt, LocalDateTime modifiedAt) {
         this.id = id;
         this.email = email;
@@ -28,8 +28,8 @@ public class MemberResponseDTO {
         this.modifiedAt = modifiedAt;
     }
 
-    public static MemberResponseDTO from(Member member) {
-        return new MemberResponseDTO(
+    public static MemberResponseDto from(Member member) {
+        return new MemberResponseDto(
                 member.getId(),
                 member.getEmail(),
                 member.getNickname(),
