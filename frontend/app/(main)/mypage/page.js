@@ -3,8 +3,9 @@
 import {useState, useEffect} from 'react';
 import {useRouter} from 'next/navigation';
 import {ArrowLeft, User, FileText, MessageCircle, ThumbsUp, Mail} from 'lucide-react';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/knowledgeout';
+import * as memberApi from '../../../features/member/api';
+import {getUserId, clearAuth} from '../../../lib/auth';
+import {useLogout} from '../../../features/auth/hooks';
 
 export default function MyPage() {
     const router = useRouter();
@@ -21,28 +22,22 @@ export default function MyPage() {
         password: '',
     });
 
-    // TODO: 실제 인증 구현 후, 사용자 ID를 세션이나 토큰에서 가져오도록 수정
-    const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+    const userId = getUserId();
+    const {logout: handleLogoutApi} = useLogout();
 
     useEffect(() => {
         if (userId) {
-            fetchUserData(userId);
+            fetchUserData();
         } else {
             setError('로그인이 필요합니다.');
             setLoading(false);
         }
     }, [userId]);
 
-    const fetchUserData = async (id) => {
+    const fetchUserData = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_BASE_URL}/members/mypage?id=${id}`);
-
-            if (!response.ok) {
-                throw new Error('사용자 정보를 불러올 수 없습니다.');
-            }
-
-            const userData = await response.json();
+            const userData = await memberApi.getMyPage();
             setUser(userData);
             setEditForm({
                 email: userData.email || '',
@@ -91,20 +86,7 @@ export default function MyPage() {
                 return;
             }
 
-            const response = await fetch(`${API_BASE_URL}/members/${userId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(updateData),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || '정보 수정에 실패했습니다.');
-            }
-
-            const updatedUser = await response.json();
+            const updatedUser = await memberApi.updateMember(updateData);
             setUser(updatedUser);
             setIsEditing(false);
             setEditForm({
@@ -164,10 +146,7 @@ export default function MyPage() {
                         돌아가기
                     </button>
                     <button
-                        onClick={() => {
-                            localStorage.removeItem('userId');
-                            router.push('/login');
-                        }}
+                        onClick={handleLogoutApi}
                         className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                     >
                         로그아웃

@@ -1,7 +1,3 @@
-@import 'tailwindcss' source(none);
-@import '../styles/theme.css';
-@source '../**/*.{js,ts,jsx,tsx}';
-
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -132,49 +128,55 @@
     @apply bg-background text-foreground;
   }
 
+  /**
+  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
+  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
+  */
+
   html {
     font-size: var(--font-size);
   }
 
   h1 {
-    font-size: 1.5rem;
-    font-weight: 500;
+    font-size: 1.5rem; /* 24px - text-2xl equivalent */
+    font-weight: var(--font-weight-medium);
     line-height: 1.5;
   }
 
   h2 {
-    font-size: 1.25rem;
-    font-weight: 500;
+    font-size: 1.25rem; /* 20px - text-xl equivalent */
+    font-weight: var(--font-weight-medium);
     line-height: 1.5;
   }
 
   h3 {
-    font-size: 1.125rem;
-    font-weight: 500;
+    font-size: 1.125rem; /* 18px - text-lg equivalent */
+    font-weight: var(--font-weight-medium);
     line-height: 1.5;
   }
 
   h4 {
-    font-size: 1rem;
-    font-weight: 500;
+    font-size: 1rem; /* 16px - text-base equivalent */
+    font-weight: var(--font-weight-medium);
     line-height: 1.5;
   }
 
   label {
-    font-size: 1rem;
-    font-weight: 500;
+    font-size: 1rem; /* 16px - text-base equivalent */
+    font-weight: var(--font-weight-medium);
     line-height: 1.5;
   }
 
   button {
-    font-size: 1rem;
-    font-weight: 500;
+    font-size: 1rem; /* 16px - text-base equivalent */
+    font-weight: var(--font-weight-medium);
     line-height: 1.5;
   }
 
   input {
-    font-size: 1rem;
-    font-weight: 400;
+    font-size: 1rem; /* 16px - text-base equivalent */
+    font-weight: var(--font-weight-normal);
     line-height: 1.5;
   }
 }
+
