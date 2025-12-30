@@ -1,6 +1,7 @@
 package org.example.backend.domain.question;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,7 +20,7 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED) //생성된 ENTITY 클래스의 JPA만 허용
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "questions")
 public class Question {
@@ -58,10 +59,10 @@ public class Question {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
-
-    // // 1:N 관계 - 답변 (질문 삭제 시 답변도 삭제되는 CascadeType.REMOVE 적용)
-    @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private List<Answer> answers = new ArrayList<>();
+//
+//    // // 1:N 관계 - 답변 (질문 삭제 시 답변도 삭제되는 CascadeType.REMOVE 적용)
+//    @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE, orphanRemoval = true)
+//    private List<Answer> answers = new ArrayList<>();
 
     // // 1:N 관계 - 태그 (중간 테이블 QuestionTag 활용)
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -72,4 +73,6 @@ public class Question {
         this.questionTags.add(questionTag);
         questionTag.setQuestion(this);
     }
+
+
 }
