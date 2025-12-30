@@ -72,4 +72,10 @@ public class Question {
         this.questionTags.add(questionTag);
         questionTag.setQuestion(this);
     }
+
+    public void update(String title, String content, Category category) {
+        this.title = title;
+        this.content = content;
+        this.category = category;
+    }
 }

@@ -45,5 +45,12 @@ public class QuestionController {
         return ResponseEntity.ok(questionService.getQuestion(id));
     }
 
-
+    @PutMapping("/{id}")
+    public ResponseEntity<QuestionResponseDto> updateQuestion(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id,
+            @RequestBody QuestionRequestDto request) {
+        QuestionResponseDto updatedQuestion = questionService.updateQuestion(id, user.getUsername(), request);
+        return ResponseEntity.ok(updatedQuestion);
+    }
 }
