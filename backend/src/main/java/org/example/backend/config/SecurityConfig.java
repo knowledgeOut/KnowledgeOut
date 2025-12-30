@@ -57,7 +57,8 @@ public class SecurityConfig {
                 // (Next.js와 JWT를 사용할 것이므로 세션을 서버에 저장하지 않음)
                 .sessionManagement(session ->
                         // session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))   // JWT 필터 구현시 해당 코드 지우고 STATELESS로 테스트 진행 필요
+                        // JWT 필터 구현시 해당 코드 지우고 STATELESS로 테스트 진행 필요
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                 // 5. URL 권한 설정
                 .authorizeHttpRequests(auth -> auth
@@ -69,7 +70,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/knowledgeout/members/signup",
                                 "/api/knowledgeout/auth/login",
-                                "/api/**"           // 테스트 용도로 api url 임시 open
+                                // 테스트 용도로 api url 임시 open
+                                "/api/**"
                         ).permitAll()
 
                         // 그 외 모든 요청(마이페이지 등)은 인증 필요
