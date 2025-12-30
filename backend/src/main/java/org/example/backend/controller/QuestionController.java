@@ -45,5 +45,11 @@ public class QuestionController {
         return ResponseEntity.ok(questionService.getQuestion(id));
     }
 
-
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteQuestion(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id) {
+        questionService.deleteQuestion(user.getUsername(), id);
+        return ResponseEntity.ok().build();
+    }
 }
