@@ -3,9 +3,13 @@ package org.example.backend.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.dto.request.MemberRequestDto;
 import org.example.backend.dto.response.MemberResponseDto;
+import org.example.backend.dto.response.MyAnswerResponseDto;
+import org.example.backend.dto.response.QuestionResponseDto;
 import org.example.backend.service.MemberService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,5 +41,20 @@ public class MemberController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @GetMapping("/mypage/questions")
+    public ResponseEntity<List<QuestionResponseDto>> myQuestions(@RequestParam Long id) {
+        return ResponseEntity.ok(memberService.getMyQuestions(id));
+    }
+
+    @GetMapping("/mypage/answers")
+    public ResponseEntity<List<MyAnswerResponseDto>> myAnswers(@RequestParam Long id) {
+        return ResponseEntity.ok(memberService.getMyAnswers(id));
+    }
+
+    @GetMapping("/mypage/likes")
+    public ResponseEntity<List<QuestionResponseDto>> myQuestionLikes(@RequestParam Long id) {
+        return ResponseEntity.ok(memberService.getMyQuestionLikes(id));
     }
 }

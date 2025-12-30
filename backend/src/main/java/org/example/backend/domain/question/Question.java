@@ -20,7 +20,7 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED) // 생성된 ENTITY 클래스의 JPA만 허용
+@NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "questions")
 public class Question {
