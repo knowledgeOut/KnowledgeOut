@@ -87,4 +87,33 @@ public class QuestionService {
         return questionRepository.findAll(spec, pageable)
                 .map(QuestionResponseDto::fromEntity);
     }
+
+    // 질문 수정
+    @Transactional
+    public QuestionResponseDto updateQuestion(Long questionId, String userEmail, QuestionRequestDto request) {
+
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 질문입니다."));
+
+        if (!question.getMember().getEmail().equals(userEmail)) {
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
+
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
+
+        question.update(request.getTitle(), request.getContent(), category);
+
+        if (request.getTagNames() != null) {
+            question.getQuestionTags().clear(); // 기존 연관관계 제거 (OrphanRemoval 설정 필요)
+            for (String tagName : request.getTagNames()) {
+                Tag tag = tagService.findOrCreateTag(tagName);
+                QuestionTag questionTag = new QuestionTag();
+                questionTag.setTag(tag);
+                question.addQuestionTag(questionTag);
+            }
+        }
+
+        return QuestionResponseDto.fromEntity(question);
+    }
 }
