@@ -6,8 +6,11 @@ import org.example.backend.dto.request.MemberRequestDto;
 import org.example.backend.dto.response.MemberResponseDto;
 import org.example.backend.dto.response.MyAnswerResponseDto;
 import org.example.backend.dto.response.QuestionResponseDto;
+import org.example.backend.repository.MemberRepository;
 import org.example.backend.service.MemberService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,26 +20,35 @@ import java.util.List;
 @RequestMapping("/api/knowledgeout/members")
 public class MemberController {
     private final MemberService memberService;
+    private final MemberRepository memberRepository;
 
-    // TODO: 인증 기능 구현 후, 현재 로그인한 사용자 ID를 SecurityContext에서 가져오도록 수정 필요
-    // 현재는 임시로 사용자 ID를 Query Parameter로 받도록 구현
+    // 마이페이지 정보 조회
     @GetMapping("/mypage")
-    public ResponseEntity<MemberResponseDto> getMyPage(@RequestParam(required = false) Long id) {
+    public ResponseEntity<MemberResponseDto> getMyPage(@AuthenticationPrincipal User user) {
         try {
-            if (id == null) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            MemberResponseDto response = memberService.getMember(id);
+            Long memberId = memberRepository.findByEmail(user.getUsername())
+                    .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."))
+                    .getId();
+            MemberResponseDto response = memberService.getMember(memberId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
+    // 회원 정보 수정
     @PutMapping("/{id}")
-    public ResponseEntity<MemberResponseDto> updateMember(@PathVariable Long id, @Valid @RequestBody MemberRequestDto request) {
+    public ResponseEntity<MemberResponseDto> updateMember(@AuthenticationPrincipal User user, @PathVariable Long id, @Valid @RequestBody MemberRequestDto request) {
         try {
+            // 현재 로그인한 사용자와 수정 대상 사용자가 일치하는지 확인
+            Long currentUserId = memberRepository.findByEmail(user.getUsername())
+                    .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."))
+                    .getId();
+
+            if (!currentUserId.equals(id)) {
+                return ResponseEntity.status(403).build(); // 본인만 수정 가능
+            }
+
             MemberResponseDto response = memberService.updateMember(id, request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -45,17 +57,38 @@ public class MemberController {
     }
 
     @GetMapping("/mypage/questions")
-    public ResponseEntity<List<QuestionResponseDto>> myQuestions(@RequestParam Long id) {
-        return ResponseEntity.ok(memberService.getMyQuestions(id));
+    public ResponseEntity<List<QuestionResponseDto>> myQuestions(@AuthenticationPrincipal User user) {
+        try {
+            Long memberId = memberRepository.findByEmail(user.getUsername())
+                    .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."))
+                    .getId();
+            return ResponseEntity.ok(memberService.getMyQuestions(memberId));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/mypage/answers")
-    public ResponseEntity<List<MyAnswerResponseDto>> myAnswers(@RequestParam Long id) {
-        return ResponseEntity.ok(memberService.getMyAnswers(id));
+    public ResponseEntity<List<MyAnswerResponseDto>> myAnswers(@AuthenticationPrincipal User user) {
+        try {
+            Long memberId = memberRepository.findByEmail(user.getUsername())
+                    .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."))
+                    .getId();
+            return ResponseEntity.ok(memberService.getMyAnswers(memberId));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/mypage/likes")
-    public ResponseEntity<List<QuestionResponseDto>> myQuestionLikes(@RequestParam Long id) {
-        return ResponseEntity.ok(memberService.getMyQuestionLikes(id));
+    public ResponseEntity<List<QuestionResponseDto>> myQuestionLikes(@AuthenticationPrincipal User user) {
+        try {
+            Long memberId = memberRepository.findByEmail(user.getUsername())
+                    .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."))
+                    .getId();
+            return ResponseEntity.ok(memberService.getMyQuestionLikes(memberId));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }
