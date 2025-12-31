@@ -16,26 +16,9 @@ export async function signup(data) {
     return response;
   } catch (error) {
     // 백엔드 에러 메시지 추출
-    let errorMessage = '회원가입에 실패했습니다.';
-    
-    if (error.message) {
-      errorMessage = error.message;
-    } else if (error.response) {
-      // fetch API를 사용하므로 response 객체가 다를 수 있음
-      try {
-        const errorData = await error.response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch (e) {
-        // JSON 파싱 실패 시 기본 메시지 사용
-        // 백엔드에서 문자열로 에러를 반환할 수도 있음
-        if (error.response.status === 400) {
-          errorMessage = '잘못된 요청입니다.';
-        } else if (error.response.status === 409) {
-          errorMessage = '이미 존재하는 정보입니다.';
-        }
-      }
-    }
-    
+    // lib/axios.js에서 이미 에러 메시지를 추출하여 error.message에 설정함
+    // 백엔드에서 "이미 가입된 이메일입니다." 같은 구체적인 메시지를 반환하면 그대로 사용
+    const errorMessage = error.message || '회원가입에 실패했습니다.';
     throw new Error(errorMessage);
   }
 }

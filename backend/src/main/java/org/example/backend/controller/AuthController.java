@@ -1,5 +1,6 @@
 package org.example.backend.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.dto.request.MemberRequestDto;
 import org.example.backend.service.AuthService;
@@ -16,7 +17,7 @@ public class AuthController {
 
     // 최종 URL: POST http://localhost:8080/api/knowledgeout/members/signup
     @PostMapping("/signup")
-    public ResponseEntity<String> signup(@RequestBody MemberRequestDto request) {
+    public ResponseEntity<String> signup(@Valid @RequestBody MemberRequestDto request) {
         authService.signup(request);
         return ResponseEntity.status(HttpStatus.CREATED).body("회원가입 성공");
     }
