@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, User as UserIcon } from 'lucide-react';
 import { QuestionList } from '@/components/common/QuestionList';
 import { QuestionForm } from '@/components/common/QuestionForm';
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthDialog } from '@/components/common/AuthDialog';
 import { MyPage } from '@/components/common/MyPage';
+import { getMyPage } from '@/features/member/api';
 
 const initialQuestions = [
   {
@@ -98,6 +99,29 @@ export default function Home() {
   const [likedQuestions, setLikedQuestions] = useState(new Set());
   const [currentUser, setCurrentUser] = useState(null);
   const [showMyPage, setShowMyPage] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // 페이지 로드 시 로그인 상태 확인
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const userData = await getMyPage();
+        setCurrentUser({
+          id: userData.id,
+          email: userData.email,
+          nickname: userData.nickname,
+          name: userData.nickname, // name 필드도 nickname으로 설정
+        });
+      } catch (error) {
+        // 로그인되지 않은 경우 무시
+        setCurrentUser(null);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const handleLogin = (user) => {
     setCurrentUser(user);
@@ -185,6 +209,15 @@ export default function Home() {
     : null;
 
   const categories = ['전체', ...Array.from(new Set(questions.map(q => q.category)))];
+
+  // 인증 상태 확인 중이면 로딩 표시
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">로딩 중...</div>
+      </div>
+    );
+  }
 
   // 마이페이지 표시
   if (showMyPage && currentUser) {
