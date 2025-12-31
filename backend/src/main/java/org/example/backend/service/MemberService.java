@@ -10,6 +10,7 @@ import org.example.backend.repository.AnswerRepository;
 import org.example.backend.repository.MemberRepository;
 import org.example.backend.repository.QuestionLikeRepository;
 import org.example.backend.repository.QuestionRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ public class MemberService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final QuestionLikeRepository questionLikeRepository;
+    private final PasswordEncoder passwordEncoder;
 
     // 마이페이지 기본 정보
     @Transactional(readOnly = true)
@@ -53,7 +55,13 @@ public class MemberService {
 
         // 비밀번호 변경 (새로운 비밀번호 입력한 경우)
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            member.updatePassword(request.getPassword());
+            // 비밀번호 길이 검증 (8자 이상)
+            if (request.getPassword().length() < 8) {
+                throw new IllegalArgumentException("비밀번호는 8자 이상이어야 합니다.");
+            }
+            // 비밀번호 암호화
+            String encodedPassword = passwordEncoder.encode(request.getPassword());
+            member.updatePassword(encodedPassword);
         }
 
         return MemberResponseDto.fromEntity(member);
