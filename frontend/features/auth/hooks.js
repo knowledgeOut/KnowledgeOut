@@ -2,10 +2,9 @@
  * 인증 관련 커스텀 훅
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as authApi from './api';
-import { isAuthenticated } from '../../lib/auth';
 
 /**
  * 로그인 훅
@@ -84,13 +83,15 @@ export function useLogout() {
 
 /**
  * 인증 상태 확인 훅
+ * @deprecated 세션 기반 인증을 사용하므로 더 이상 사용하지 않습니다.
+ * 인증 상태는 백엔드 API 호출로 확인해야 합니다.
  */
 export function useAuth() {
   const [authenticated, setAuthenticated] = useState(false);
 
-  useEffect(() => {
-    setAuthenticated(isAuthenticated());
-  }, []);
+  // 세션 기반 인증이므로 클라이언트에서 직접 확인할 수 없음
+  // 백엔드 API를 호출하여 인증 상태를 확인해야 합니다.
+  // TODO: 백엔드에 인증 상태 확인 API를 추가하고 여기서 호출하도록 수정 필요
 
   return { authenticated };
 }

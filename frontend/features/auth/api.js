@@ -3,7 +3,6 @@
  */
 
 import apiClient from '../../lib/axios';
-import { setUserId, setUser, setAuthToken, clearAuth } from '../../lib/auth';
 
 /**
  * 회원가입
@@ -44,25 +43,13 @@ export async function signup(data) {
 /**
  * 로그인
  * @param {Object} credentials - { email, password }
- * @returns {Promise<Object>} 사용자 정보 및 토큰
+ * @returns {Promise<Object>} 로그인 응답 { status, message }
  */
 export async function login(credentials) {
   try {
     const response = await apiClient.post('/members/login', credentials);
-    
-    // 로그인 성공 시 사용자 정보 저장
-    if (response.user) {
-      setUser(response.user);
-      if (response.user.id) {
-        setUserId(response.user.id.toString());
-      }
-    }
-    
-    // 토큰이 있다면 저장
-    if (response.token) {
-      setAuthToken(response.token);
-    }
-    
+    // 백엔드는 세션 기반 인증을 사용하므로 쿠키에 JSESSIONID가 저장됨
+    // 응답: { status: "Success", message: "로그인이 완료되었습니다." }
     return response;
   } catch (error) {
     throw new Error(error.message || '로그인에 실패했습니다.');
@@ -76,11 +63,9 @@ export async function login(credentials) {
 export async function logout() {
   try {
     await apiClient.post('/members/logout');
-    clearAuth();
+    // 세션 기반이므로 서버에서 세션 무효화 및 쿠키 삭제
     return { success: true };
   } catch (error) {
-    // 로그아웃 실패해도 클라이언트에서는 인증 정보 제거
-    clearAuth();
     throw new Error(error.message || '로그아웃에 실패했습니다.');
   }
 }

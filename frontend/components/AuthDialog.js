@@ -6,9 +6,11 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { signup } from '../features/auth/api';
+import { signup, login } from '../features/auth/api';
+import { useRouter } from 'next/navigation';
 
 export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSignup }) {
+  const router = useRouter();
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
@@ -16,16 +18,34 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
   const [signupNickname, setSignupNickname] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
   const [signupError, setSignupError] = useState('');
+  const [loginError, setLoginError] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // 로그인은 별도 API로 처리 (현재는 onLogin 콜백 사용)
-    if (onLogin) {
-      onLogin({ email: loginEmail, password: loginPassword });
+    setLoginError('');
+    setIsLoginSubmitting(true);
+
+    try {
+      await login({
+        email: loginEmail,
+        password: loginPassword,
+      });
+      
+      // 로그인 성공
+      if (onLogin) {
+        onLogin({ email: loginEmail });
+      }
+      setLoginEmail('');
+      setLoginPassword('');
+      onClose();
+      router.push('/');
+    } catch (error) {
+      setLoginError(error.message || '로그인에 실패했습니다.');
+    } finally {
+      setIsLoginSubmitting(false);
     }
-    setLoginEmail('');
-    setLoginPassword('');
   };
 
   const handleSignup = async (e) => {
@@ -80,6 +100,11 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
           
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-4 pt-4">
+              {loginError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                  {loginError}
+                </div>
+              )}
               <div>
                 <Label htmlFor="login-email">이메일</Label>
                 <Input
@@ -102,8 +127,8 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">
-                로그인
+              <Button type="submit" className="w-full" disabled={isLoginSubmitting}>
+                {isLoginSubmitting ? '로그인 중...' : '로그인'}
               </Button>
             </form>
           </TabsContent>
