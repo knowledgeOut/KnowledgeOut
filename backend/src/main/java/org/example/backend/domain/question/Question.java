@@ -38,10 +38,6 @@ public class Question {
     @Column(nullable = false)
     private int viewCount = 0;
 
-    @ColumnDefault("0")
-    @Column(nullable = false)
-    private int likeCount = 0;
-
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

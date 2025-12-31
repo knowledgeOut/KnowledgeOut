@@ -116,4 +116,16 @@ public class QuestionService {
 
         return QuestionResponseDto.fromEntity(question);
     }
+
+    @Transactional
+    public void deleteQuestion(String email, Long id) {
+        Question question = questionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 질문입니다."));
+
+        if (!question.getMember().getEmail().equals(email)) {
+            throw new IllegalStateException("삭제 권한이 없습니다.");
+        }
+
+        questionRepository.delete(question);
+    }
 }
