@@ -12,39 +12,57 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createQuestion } from '@/features/question/api';
 import { getMyPage } from '@/features/member/api';
-
-const categories = ['기술', '일반', '기능', '버그', '기타'];
+import { getCategories } from '@/features/category/api';
 
 export default function NewQuestionPage() {
     const router = useRouter();
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [author, setAuthor] = useState('');
-    const [category, setCategory] = useState('일반');
+    const [categories, setCategories] = useState([]);
+    const [categoryId, setCategoryId] = useState(null);
     const [tags, setTags] = useState([]);
     const [loading, setLoading] = useState(false);
     const [loadingUser, setLoadingUser] = useState(true);
+    const [loadingCategories, setLoadingCategories] = useState(true);
 
     useEffect(() => {
         // 로그인한 사용자 정보 가져오기
         const fetchUser = async () => {
             try {
                 setLoadingUser(true);
-                // TODO: 백엔드에서 현재 로그인한 사용자 정보를 가져오는 API로 변경 필요
-                // 현재는 임시로 userId 1 사용
-                const userId = 1;
-                const userData = await getMyPage(userId);
+                const userData = await getMyPage();
                 setAuthor(userData.nickname || userData.email || '');
             } catch (error) {
                 console.error('사용자 정보를 불러오는데 실패했습니다:', error);
                 alert('로그인이 필요합니다.');
                 router.push('/');
+                return;
             } finally {
                 setLoadingUser(false);
             }
         };
 
+        // 카테고리 목록 가져오기
+        const fetchCategories = async () => {
+            try {
+                setLoadingCategories(true);
+                const categoryList = await getCategories();
+                setCategories(categoryList);
+                // 첫 번째 카테고리를 기본값으로 설정
+                if (categoryList && categoryList.length > 0) {
+                    setCategoryId(categoryList[0].id);
+                }
+            } catch (error) {
+                console.error('카테고리 목록을 불러오는데 실패했습니다:', error);
+                alert('카테고리 목록을 불러오는데 실패했습니다.');
+            } finally {
+                setLoadingCategories(false);
+            }
+        };
+
         fetchUser();
+        fetchCategories();
     }, [router]);
 
     const extractTagsFromContent = (text) => {
@@ -83,17 +101,22 @@ export default function NewQuestionPage() {
             return;
         }
 
+        if (!categoryId) {
+            alert('카테고리를 선택해주세요.');
+            return;
+        }
+
         try {
             setLoading(true);
-            await createQuestion({
+            const questionId = await createQuestion({
                 title: title.trim(),
                 content: content.trim(), // 태그가 포함된 내용이 그대로 저장됨
-                category,
+                categoryId: categoryId, // 백엔드 API 형식에 맞게 categoryId 사용
                 tagNames: tags.length > 0 ? tags : undefined, // 백엔드 API 형식에 맞게 tagNames 사용
             });
             
-            // 성공 시 질문 목록 페이지로 이동
-            router.push('/questions');
+            // 성공 시 등록한 질문의 상세 화면으로 이동
+            router.push(`/questions/${questionId}`);
         } catch (error) {
             alert(error.message || '질문 등록에 실패했습니다.');
         } finally {
@@ -128,14 +151,18 @@ export default function NewQuestionPage() {
 
                             <div>
                                 <Label htmlFor="category">카테고리</Label>
-                                <Select value={category} onValueChange={setCategory}>
+                                <Select 
+                                    value={categoryId?.toString() || ''} 
+                                    onValueChange={(value) => setCategoryId(Number(value))}
+                                    disabled={loadingCategories}
+                                >
                                     <SelectTrigger>
-                                        <SelectValue />
+                                        <SelectValue placeholder={loadingCategories ? '카테고리 로딩 중...' : '카테고리를 선택하세요'} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {categories.map((cat) => (
-                                            <SelectItem key={cat} value={cat}>
-                                                {cat}
+                                            <SelectItem key={cat.id} value={cat.id.toString()}>
+                                                {cat.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -197,7 +224,7 @@ export default function NewQuestionPage() {
                                 >
                                     취소
                                 </Button>
-                                <Button type="submit" disabled={loading || loadingUser || !author}>
+                                <Button type="submit" disabled={loading || loadingUser || loadingCategories || !author || !categoryId}>
                                     {loading ? '등록 중...' : '질문 등록'}
                                 </Button>
                             </div>

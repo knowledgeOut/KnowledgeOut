@@ -36,13 +36,13 @@ export async function getQuestion(id) {
 
 /**
  * 질문 등록
- * @param {Object} data - { title, content, category?, tags? }
- * @returns {Promise<Object>} 생성된 질문 정보
+ * @param {Object} data - { title, content, categoryId, tagNames? }
+ * @returns {Promise<Long>} 생성된 질문 ID
  */
 export async function createQuestion(data) {
   try {
     const response = await apiClient.post('/questions', data);
-    return response;
+    return response; // 백엔드에서 Long 타입의 질문 ID를 반환
   } catch (error) {
     throw new Error(error.message || '질문 등록에 실패했습니다.');
   }
