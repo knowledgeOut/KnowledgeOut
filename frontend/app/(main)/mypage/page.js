@@ -13,6 +13,12 @@ export default function MyPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('questions');
+    
+    // 탭별 데이터 상태
+    const [questions, setQuestions] = useState([]);
+    const [answers, setAnswers] = useState([]);
+    const [likedQuestions, setLikedQuestions] = useState([]);
+    const [loadingTab, setLoadingTab] = useState(false);
 
     // 수정 폼 상태
     const [editForm, setEditForm] = useState({
@@ -27,14 +33,17 @@ export default function MyPage() {
         fetchUserData();
     }, []);
 
+    useEffect(() => {
+        if (user?.id) {
+            fetchTabData(activeTab);
+        }
+    }, [activeTab, user?.id]);
+
     const fetchUserData = async () => {
         try {
             setLoading(true);
-            // TODO: 세션 기반 인증이므로 백엔드에서 현재 로그인한 사용자 정보를 가져와야 함
-            // 현재는 임시로 사용자 ID를 하드코딩 (나중에 백엔드에서 SecurityContext로 가져올 예정)
-            // 백엔드 API가 현재 로그인한 사용자 정보를 반환하도록 수정되면 userId 파라미터 제거 필요
-            const userId = 1; // 임시 값
-            const userData = await memberApi.getMyPage(userId);
+            // Spring Security 세션 기반 인증을 사용하므로 세션 쿠키가 자동으로 전송됩니다
+            const userData = await memberApi.getMyPage();
             setUser(userData);
             setEditForm({
                 email: userData.email || '',
@@ -43,9 +52,39 @@ export default function MyPage() {
             });
             setError(null);
         } catch (err) {
-            setError(err.message);
+            setError(err.message || '마이페이지 정보를 불러올 수 없습니다.');
+            // 인증 에러인 경우 로그인 페이지로 리다이렉트
+            if (err.message.includes('로그인') || err.response?.status === 401 || err.response?.status === 403) {
+                router.push('/login');
+            }
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchTabData = async (tab) => {
+        if (!user?.id) return;
+        
+        try {
+            setLoadingTab(true);
+            switch (tab) {
+                case 'questions':
+                    const questionsData = await memberApi.getMyQuestions();
+                    setQuestions(questionsData || []);
+                    break;
+                case 'answers':
+                    const answersData = await memberApi.getMyAnswers();
+                    setAnswers(answersData || []);
+                    break;
+                case 'liked':
+                    const likedData = await memberApi.getMyQuestionLikes();
+                    setLikedQuestions(likedData || []);
+                    break;
+            }
+        } catch (err) {
+            console.error('Failed to fetch tab data:', err);
+        } finally {
+            setLoadingTab(false);
         }
     };
 
@@ -83,9 +122,8 @@ export default function MyPage() {
                 return;
             }
 
-            // TODO: 세션 기반 인증이므로 백엔드에서 현재 로그인한 사용자 ID를 가져와야 함
-            const userId = user?.id || 1; // 임시 값
-            const updatedUser = await memberApi.updateMember(userId, updateData);
+            // Spring Security 세션 기반 인증을 사용하므로 세션 쿠키가 자동으로 전송됩니다
+            const updatedUser = await memberApi.updateMember(updateData);
             setUser(updatedUser);
             setIsEditing(false);
             setEditForm({
@@ -94,7 +132,7 @@ export default function MyPage() {
                 password: '',
             });
         } catch (err) {
-            setError(err.message);
+            setError(err.message || '회원 정보 수정에 실패했습니다.');
         } finally {
             setLoading(false);
         }
@@ -106,6 +144,14 @@ export default function MyPage() {
             ...prev,
             [name]: value,
         }));
+    };
+
+    const handleQuestionClick = (questionId) => {
+        router.push(`/questions/${questionId}`);
+    };
+
+    const handleLogout = () => {
+        handleLogoutApi();
     };
 
     if (loading && !user) {
@@ -145,7 +191,7 @@ export default function MyPage() {
                         돌아가기
                     </button>
                     <button
-                        onClick={handleLogoutApi}
+                        onClick={handleLogout}
                         className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                     >
                         로그아웃
@@ -210,13 +256,15 @@ export default function MyPage() {
                                 <div className="flex gap-2 pt-2">
                                     <button
                                         onClick={handleSave}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                        disabled={loading}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
                                     >
                                         저장
                                     </button>
                                     <button
                                         onClick={handleCancel}
-                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                                        disabled={loading}
+                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors disabled:opacity-50"
                                     >
                                         취소
                                     </button>
@@ -265,7 +313,7 @@ export default function MyPage() {
                             }`}
                         >
                             <FileText className="w-4 h-4" />
-                            내 질문 (0)
+                            내 질문 ({questions.length})
                         </button>
                         <button
                             type="button"
@@ -278,7 +326,7 @@ export default function MyPage() {
                             }`}
                         >
                             <MessageCircle className="w-4 h-4" />
-                            내 답변 (0)
+                            내 답변 ({answers.length})
                         </button>
                         <button
                             type="button"
@@ -291,32 +339,121 @@ export default function MyPage() {
                             }`}
                         >
                             <ThumbsUp className="w-4 h-4" />
-                            추천한 질문
+                            추천한 질문 ({likedQuestions.length})
                         </button>
                     </div>
 
                     {/* Tabs Content */}
                     <div className="flex-1 outline-none space-y-4">
-                        {activeTab === 'questions' && (
-                            <div className="bg-white text-gray-900 flex flex-col gap-6 rounded-xl border border-gray-200">
-                                <div className="px-6 pt-6 pb-6 text-center text-gray-500">
-                                    작성한 질문이 없습니다.
-                                </div>
+                        {loadingTab ? (
+                            <div className="bg-white text-gray-900 flex flex-col gap-6 rounded-xl border border-gray-200 p-6">
+                                <div className="text-center text-gray-500">로딩 중...</div>
                             </div>
-                        )}
-                        {activeTab === 'answers' && (
-                            <div className="bg-white text-gray-900 flex flex-col gap-6 rounded-xl border border-gray-200">
-                                <div className="px-6 pt-6 pb-6 text-center text-gray-500">
-                                    작성한 답변이 없습니다.
-                                </div>
-                            </div>
-                        )}
-                        {activeTab === 'liked' && (
-                            <div className="bg-white text-gray-900 flex flex-col gap-6 rounded-xl border border-gray-200">
-                                <div className="px-6 pt-6 pb-6 text-center text-gray-500">
-                                    추천한 질문이 없습니다.
-                                </div>
-                            </div>
+                        ) : (
+                            <>
+                                {activeTab === 'questions' && (
+                                    <div className="bg-white text-gray-900 flex flex-col gap-6 rounded-xl border border-gray-200">
+                                        {questions.length === 0 ? (
+                                            <div className="px-6 pt-6 pb-6 text-center text-gray-500">
+                                                작성한 질문이 없습니다.
+                                            </div>
+                                        ) : (
+                                            questions.map((question) => (
+                                                <div
+                                                    key={question.id}
+                                                    onClick={() => handleQuestionClick(question.id)}
+                                                    className="px-6 py-4 border-b border-gray-200 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <div className="flex-1">
+                                                            <h3 className="font-semibold text-lg mb-2">{question.title}</h3>
+                                                            <p className="text-gray-600 text-sm line-clamp-2 mb-3">{question.content}</p>
+                                                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                                                                <span>{new Date(question.createdAt).toLocaleDateString('ko-KR')}</span>
+                                                                {question.categoryName && (
+                                                                    <span className="px-2 py-1 bg-gray-100 rounded">{question.categoryName}</span>
+                                                                )}
+                                                                <div className="flex items-center gap-2">
+                                                                    <ThumbsUp className="w-3 h-3" />
+                                                                    <span>{question.likeCount}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <MessageCircle className="w-3 h-3" />
+                                                                    <span>{question.answerCount}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                                {activeTab === 'answers' && (
+                                    <div className="bg-white text-gray-900 flex flex-col gap-6 rounded-xl border border-gray-200">
+                                        {answers.length === 0 ? (
+                                            <div className="px-6 pt-6 pb-6 text-center text-gray-500">
+                                                작성한 답변이 없습니다.
+                                            </div>
+                                        ) : (
+                                            answers.map((answer) => (
+                                                <div
+                                                    key={answer.answerId}
+                                                    onClick={() => handleQuestionClick(answer.questionId)}
+                                                    className="px-6 py-4 border-b border-gray-200 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <div className="mb-2">
+                                                        <span className="text-sm text-gray-500">답변한 질문: </span>
+                                                        <span className="text-sm font-medium text-gray-900">{answer.questionTitle}</span>
+                                                    </div>
+                                                    <p className="text-gray-700 mb-3 line-clamp-3">{answer.content}</p>
+                                                    <div className="text-xs text-gray-500">
+                                                        {new Date(answer.createdAt).toLocaleString('ko-KR')}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                                {activeTab === 'liked' && (
+                                    <div className="bg-white text-gray-900 flex flex-col gap-6 rounded-xl border border-gray-200">
+                                        {likedQuestions.length === 0 ? (
+                                            <div className="px-6 pt-6 pb-6 text-center text-gray-500">
+                                                추천한 질문이 없습니다.
+                                            </div>
+                                        ) : (
+                                            likedQuestions.map((question) => (
+                                                <div
+                                                    key={question.id}
+                                                    onClick={() => handleQuestionClick(question.id)}
+                                                    className="px-6 py-4 border-b border-gray-200 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <div className="flex-1">
+                                                            <h3 className="font-semibold text-lg mb-2">{question.title}</h3>
+                                                            <p className="text-gray-600 text-sm line-clamp-2 mb-3">{question.content}</p>
+                                                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                                                                <span>{new Date(question.createdAt).toLocaleDateString('ko-KR')}</span>
+                                                                {question.categoryName && (
+                                                                    <span className="px-2 py-1 bg-gray-100 rounded">{question.categoryName}</span>
+                                                                )}
+                                                                <div className="flex items-center gap-2">
+                                                                    <ThumbsUp className="w-3 h-3" />
+                                                                    <span>{question.likeCount}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <MessageCircle className="w-3 h-3" />
+                                                                    <span>{question.answerCount}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>

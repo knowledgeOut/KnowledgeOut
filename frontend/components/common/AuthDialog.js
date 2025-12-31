@@ -7,6 +7,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { signup, login } from '../../features/auth/api';
+import { getMyPage } from '../../features/member/api';
 import { useRouter } from 'next/navigation';
 
 export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSignup }) {
@@ -33,10 +34,24 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
                 password: loginPassword,
             });
             
-            // 로그인 성공
-            if (onLogin) {
-                onLogin({ email: loginEmail });
+            // 로그인 성공 후 사용자 정보 가져오기 (Spring Security 세션 기반)
+            try {
+                const userData = await getMyPage();
+                if (onLogin) {
+                    onLogin({
+                        id: userData.id,
+                        email: userData.email,
+                        nickname: userData.nickname,
+                        name: userData.nickname, // name 필드도 nickname으로 설정
+                    });
+                }
+            } catch (userError) {
+                // 사용자 정보 가져오기 실패 시 이메일만 전달
+                if (onLogin) {
+                    onLogin({ email: loginEmail });
+                }
             }
+            
             setLoginEmail('');
             setLoginPassword('');
             onClose();
