@@ -3,33 +3,22 @@
  */
 
 import apiClient from '../../lib/axios';
-import { setUserId, setUser, setAuthToken, clearAuth } from '../../lib/auth';
 
 /**
  * 회원가입
  * @param {Object} data - { email, password, nickname }
- * @returns {Promise<Object>} 사용자 정보
+ * @returns {Promise<Object>} 성공 메시지
  */
 export async function signup(data) {
   try {
     const response = await apiClient.post('/members/signup', data);
+    // 백엔드는 "회원가입 성공" 문자열을 반환하므로 그대로 반환
     return response;
   } catch (error) {
     // 백엔드 에러 메시지 추출
-    let errorMessage = '회원가입에 실패했습니다.';
-    
-    if (error.message) {
-      errorMessage = error.message;
-    } else if (error.response) {
-      // fetch API를 사용하므로 response 객체가 다를 수 있음
-      try {
-        const errorData = await error.response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch (e) {
-        // JSON 파싱 실패 시 기본 메시지 사용
-      }
-    }
-    
+    // lib/axios.js에서 이미 에러 메시지를 추출하여 error.message에 설정함
+    // 백엔드에서 "이미 가입된 이메일입니다." 같은 구체적인 메시지를 반환하면 그대로 사용
+    const errorMessage = error.message || '회원가입에 실패했습니다.';
     throw new Error(errorMessage);
   }
 }
@@ -37,25 +26,13 @@ export async function signup(data) {
 /**
  * 로그인
  * @param {Object} credentials - { email, password }
- * @returns {Promise<Object>} 사용자 정보 및 토큰
+ * @returns {Promise<Object>} 로그인 응답 { status, message }
  */
 export async function login(credentials) {
   try {
     const response = await apiClient.post('/members/login', credentials);
-    
-    // 로그인 성공 시 사용자 정보 저장
-    if (response.user) {
-      setUser(response.user);
-      if (response.user.id) {
-        setUserId(response.user.id.toString());
-      }
-    }
-    
-    // 토큰이 있다면 저장
-    if (response.token) {
-      setAuthToken(response.token);
-    }
-    
+    // 백엔드는 세션 기반 인증을 사용하므로 쿠키에 JSESSIONID가 저장됨
+    // 응답: { status: "Success", message: "로그인이 완료되었습니다." }
     return response;
   } catch (error) {
     throw new Error(error.message || '로그인에 실패했습니다.');
@@ -69,11 +46,9 @@ export async function login(credentials) {
 export async function logout() {
   try {
     await apiClient.post('/members/logout');
-    clearAuth();
+    // 세션 기반이므로 서버에서 세션 무효화 및 쿠키 삭제
     return { success: true };
   } catch (error) {
-    // 로그아웃 실패해도 클라이언트에서는 인증 정보 제거
-    clearAuth();
     throw new Error(error.message || '로그아웃에 실패했습니다.');
   }
 }

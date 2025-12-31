@@ -1,5 +1,6 @@
 package org.example.backend.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.dto.request.MemberRequestDto;
 import org.example.backend.dto.response.MemberResponseDto;
@@ -34,7 +35,7 @@ public class MemberController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MemberResponseDto> updateMember(@PathVariable Long id, @RequestBody MemberRequestDto request) {
+    public ResponseEntity<MemberResponseDto> updateMember(@PathVariable Long id, @Valid @RequestBody MemberRequestDto request) {
         try {
             MemberResponseDto response = memberService.updateMember(id, request);
             return ResponseEntity.ok(response);

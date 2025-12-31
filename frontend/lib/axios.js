@@ -74,17 +74,23 @@ export const apiClient = {
     if (!response.ok) {
       let errorMessage = '요청에 실패했습니다.';
       try {
-        const errorData = await response.json();
-        // Spring Boot 기본 에러 응답 형식 처리
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        } else if (errorData.error) {
-          errorMessage = errorData.error;
-        } else if (typeof errorData === 'string') {
-          errorMessage = errorData;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          // Spring Boot 기본 에러 응답 형식 처리
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          }
+        } else {
+          // JSON이 아닌 경우 텍스트로 읽기
+          errorMessage = await response.text() || errorMessage;
         }
       } catch (e) {
-        // JSON 파싱 실패 시 상태 코드 기반 메시지
+        // 파싱 실패 시 상태 코드 기반 메시지
         if (response.status === 400) {
           errorMessage = '잘못된 요청입니다.';
         } else if (response.status === 409) {
@@ -98,7 +104,15 @@ export const apiClient = {
       throw error;
     }
 
-    return response.json();
+    // 성공 응답 처리 - JSON 또는 텍스트
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return response.json();
+    } else {
+      // 텍스트 응답인 경우 (예: "회원가입 성공")
+      const text = await response.text();
+      return text;
+    }
   },
 
   /**

@@ -6,63 +6,87 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { signup, login } from '../features/auth/api';
+import { useRouter } from 'next/navigation';
 
 export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSignup }) {
+  const router = useRouter();
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
-  const [signupName, setSignupName] = useState('');
+  const [signupNickname, setSignupNickname] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
+  const [signupError, setSignupError] = useState('');
+  const [loginError, setLoginError] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // 데모 버전: 저장된 사용자 목록에서 찾기
-    const savedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const user = savedUsers.find((u) => u.email === loginEmail && u.password === loginPassword);
-    
-    if (user) {
-      onLogin({ name: user.name, email: user.email });
+    setLoginError('');
+    setIsLoginSubmitting(true);
+
+    try {
+      await login({
+        email: loginEmail,
+        password: loginPassword,
+      });
+      
+      // 로그인 성공
+      if (onLogin) {
+        onLogin({ email: loginEmail });
+      }
       setLoginEmail('');
       setLoginPassword('');
       onClose();
-    } else {
-      alert('이메일 또는 비밀번호가 일치하지 않습니다.');
+      router.push('/');
+    } catch (error) {
+      setLoginError(error.message || '로그인에 실패했습니다.');
+    } finally {
+      setIsLoginSubmitting(false);
     }
   };
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
+    setSignupError('');
+    
+    // 비밀번호 길이 검증
+    if (signupPassword.length < 8) {
+      setSignupError('비밀번호는 8자 이상이어야 합니다.');
+      return;
+    }
+    
     if (signupPassword !== signupConfirmPassword) {
-      alert('비밀번호가 일치하지 않습니다.');
+      setSignupError('비밀번호가 일치하지 않습니다.');
       return;
     }
-    
-    // 데모 버전: localStorage에 사용자 정보 저장
-    const savedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    
-    // 이메일 중복 체크
-    if (savedUsers.some((u) => u.email === signupEmail)) {
-      alert('이미 등록된 이메일입니다.');
-      return;
+
+    setIsSubmitting(true);
+
+    try {
+      await signup({
+        email: signupEmail,
+        password: signupPassword,
+        nickname: signupNickname,
+      });
+      
+      // 회원가입 성공
+      if (onSignup) {
+        onSignup({ email: signupEmail, nickname: signupNickname });
+      }
+      setSignupEmail('');
+      setSignupPassword('');
+      setSignupNickname('');
+      setSignupConfirmPassword('');
+      onClose();
+      alert('회원가입이 완료되었습니다!');
+    } catch (error) {
+      setSignupError(error.message || '회원가입에 실패했습니다.');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    const newUser = {
-      name: signupName,
-      email: signupEmail,
-      password: signupPassword,
-    };
-    
-    savedUsers.push(newUser);
-    localStorage.setItem('users', JSON.stringify(savedUsers));
-    
-    onSignup({ name: signupName, email: signupEmail });
-    setSignupEmail('');
-    setSignupPassword('');
-    setSignupName('');
-    setSignupConfirmPassword('');
-    onClose();
-    alert('회원가입이 완료되었습니다!');
   };
 
   return (
@@ -82,6 +106,11 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
           
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-4 pt-4">
+              {loginError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                  {loginError}
+                </div>
+              )}
               <div>
                 <Label htmlFor="login-email">이메일</Label>
                 <Input
@@ -104,21 +133,26 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">
-                로그인
+              <Button type="submit" className="w-full" disabled={isLoginSubmitting}>
+                {isLoginSubmitting ? '로그인 중...' : '로그인'}
               </Button>
             </form>
           </TabsContent>
 
           <TabsContent value="signup">
             <form onSubmit={handleSignup} className="space-y-4 pt-4">
+              {signupError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                  {signupError}
+                </div>
+              )}
               <div>
-                <Label htmlFor="signup-name">이름</Label>
+                <Label htmlFor="signup-nickname">닉네임</Label>
                 <Input
-                  id="signup-name"
-                  value={signupName}
-                  onChange={(e) => setSignupName(e.target.value)}
-                  placeholder="홍길동"
+                  id="signup-nickname"
+                  value={signupNickname}
+                  onChange={(e) => setSignupNickname(e.target.value)}
+                  placeholder="닉네임을 입력하세요"
                   required
                 />
               </div>
@@ -140,7 +174,7 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
                   type="password"
                   value={signupPassword}
                   onChange={(e) => setSignupPassword(e.target.value)}
-                  placeholder="비밀번호"
+                  placeholder="8자 이상 입력하세요"
                   required
                 />
               </div>
@@ -155,8 +189,8 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">
-                회원가입
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? '가입 중...' : '회원가입'}
               </Button>
             </form>
           </TabsContent>

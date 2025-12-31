@@ -119,3 +119,5 @@ docker-compose.override.yml
 # 로그 폴더
 logs/
 log/
+
+*.mdc

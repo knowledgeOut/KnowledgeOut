@@ -4,7 +4,6 @@ import {useState, useEffect} from 'react';
 import {useRouter} from 'next/navigation';
 import {ArrowLeft, User, FileText, MessageCircle, ThumbsUp, Mail} from 'lucide-react';
 import * as memberApi from '../../../features/member/api';
-import {getUserId, clearAuth} from '../../../lib/auth';
 import {useLogout} from '../../../features/auth/hooks';
 
 export default function MyPage() {
@@ -22,22 +21,20 @@ export default function MyPage() {
         password: '',
     });
 
-    const userId = getUserId();
     const {logout: handleLogoutApi} = useLogout();
 
     useEffect(() => {
-        if (userId) {
-            fetchUserData();
-        } else {
-            setError('로그인이 필요합니다.');
-            setLoading(false);
-        }
-    }, [userId]);
+        fetchUserData();
+    }, []);
 
     const fetchUserData = async () => {
         try {
             setLoading(true);
-            const userData = await memberApi.getMyPage();
+            // TODO: 세션 기반 인증이므로 백엔드에서 현재 로그인한 사용자 정보를 가져와야 함
+            // 현재는 임시로 사용자 ID를 하드코딩 (나중에 백엔드에서 SecurityContext로 가져올 예정)
+            // 백엔드 API가 현재 로그인한 사용자 정보를 반환하도록 수정되면 userId 파라미터 제거 필요
+            const userId = 1; // 임시 값
+            const userData = await memberApi.getMyPage(userId);
             setUser(userData);
             setEditForm({
                 email: userData.email || '',
@@ -86,7 +83,9 @@ export default function MyPage() {
                 return;
             }
 
-            const updatedUser = await memberApi.updateMember(updateData);
+            // TODO: 세션 기반 인증이므로 백엔드에서 현재 로그인한 사용자 ID를 가져와야 함
+            const userId = user?.id || 1; // 임시 값
+            const updatedUser = await memberApi.updateMember(userId, updateData);
             setUser(updatedUser);
             setIsEditing(false);
             setEditForm({
