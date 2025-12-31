@@ -1,0 +1,14 @@
+@baseUrl = http://localhost:8080
+@apiPath = /api/knowledgeout
+
+### 마이페이지 정보 조회
+GET {{baseUrl}}{{apiPath}}/members/mypage?id=1
+
+### 내가 작성한 질문
+GET {{baseUrl}}{{apiPath}}/members/mypage/questions?id=1
+
+### 내가 작성한 답변
+GET {{baseUrl}}{{apiPath}}/members/mypage/answers?id=1
+
+### 내가 좋아요한 질문
+GET {{baseUrl}}{{apiPath}}/members/mypage/likes?id=1

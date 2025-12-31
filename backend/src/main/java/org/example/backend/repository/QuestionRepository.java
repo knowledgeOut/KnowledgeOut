@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 // JpaSpecificationExecutor<Question> 상속 추가
 public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSpecificationExecutor<Question> {
 
@@ -20,4 +22,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSp
     @Modifying
     @Query("update Question q set q.viewCount = q.viewCount + 1 where q.id = :id")
     void updateViewCount(@Param("id") Long id);
+
+    List<Question>  findByMemberIdOrderByCreatedAtDesc(Long memberId);
 }
