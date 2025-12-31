@@ -67,6 +67,12 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
         e.preventDefault();
         setSignupError('');
         
+        // 비밀번호 길이 검증
+        if (signupPassword.length < 8) {
+            setSignupError('비밀번호는 8자 이상이어야 합니다.');
+            return;
+        }
+        
         if (signupPassword !== signupConfirmPassword) {
             setSignupError('비밀번호가 일치하지 않습니다.');
             return;

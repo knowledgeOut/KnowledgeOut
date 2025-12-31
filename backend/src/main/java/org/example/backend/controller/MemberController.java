@@ -1,5 +1,6 @@
 package org.example.backend.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.dto.request.MemberRequestDto;
 import org.example.backend.dto.response.MemberResponseDto;
@@ -37,7 +38,7 @@ public class MemberController {
 
     // 회원 정보 수정
     @PutMapping("/{id}")
-    public ResponseEntity<MemberResponseDto> updateMember(@AuthenticationPrincipal User user, @PathVariable Long id, @RequestBody MemberRequestDto request) {
+    public ResponseEntity<MemberResponseDto> updateMember(@AuthenticationPrincipal User user, @PathVariable Long id, @Valid @RequestBody MemberRequestDto request) {
         try {
             // 현재 로그인한 사용자와 수정 대상 사용자가 일치하는지 확인
             Long currentUserId = memberRepository.findByEmail(user.getUsername())
@@ -55,7 +56,6 @@ public class MemberController {
         }
     }
 
-    // 내가 작성한 질문 목록 조회
     @GetMapping("/mypage/questions")
     public ResponseEntity<List<QuestionResponseDto>> myQuestions(@AuthenticationPrincipal User user) {
         try {
@@ -68,7 +68,6 @@ public class MemberController {
         }
     }
 
-    // 내가 작성한 답변 목록 조회
     @GetMapping("/mypage/answers")
     public ResponseEntity<List<MyAnswerResponseDto>> myAnswers(@AuthenticationPrincipal User user) {
         try {
@@ -81,7 +80,6 @@ public class MemberController {
         }
     }
 
-    // 내가 추천한 질문 목록 조회
     @GetMapping("/mypage/likes")
     public ResponseEntity<List<QuestionResponseDto>> myQuestionLikes(@AuthenticationPrincipal User user) {
         try {
