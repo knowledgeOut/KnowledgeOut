@@ -8,11 +8,12 @@ import { setUserId, setUser, setAuthToken, clearAuth } from '../../lib/auth';
 /**
  * 회원가입
  * @param {Object} data - { email, password, nickname }
- * @returns {Promise<Object>} 사용자 정보
+ * @returns {Promise<Object>} 성공 메시지
  */
 export async function signup(data) {
   try {
     const response = await apiClient.post('/members/signup', data);
+    // 백엔드는 "회원가입 성공" 문자열을 반환하므로 그대로 반환
     return response;
   } catch (error) {
     // 백엔드 에러 메시지 추출
@@ -27,6 +28,12 @@ export async function signup(data) {
         errorMessage = errorData.message || errorData.error || errorMessage;
       } catch (e) {
         // JSON 파싱 실패 시 기본 메시지 사용
+        // 백엔드에서 문자열로 에러를 반환할 수도 있음
+        if (error.response.status === 400) {
+          errorMessage = '잘못된 요청입니다.';
+        } else if (error.response.status === 409) {
+          errorMessage = '이미 존재하는 정보입니다.';
+        }
       }
     }
     
