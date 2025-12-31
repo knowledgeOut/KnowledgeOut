@@ -89,6 +89,7 @@ const initialQuestions = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [questions, setQuestions] = useState(initialQuestions);
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
   const [showForm, setShowForm] = useState(false);
