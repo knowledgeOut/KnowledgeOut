@@ -10,8 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getUser } from '@/lib/auth';
 import { createQuestion } from '@/features/question/api';
+import { getMyPage } from '@/features/member/api';
 
 const categories = ['기술', '일반', '기능', '버그', '기타'];
 
@@ -21,19 +21,30 @@ export default function NewQuestionPage() {
     const [content, setContent] = useState('');
     const [author, setAuthor] = useState('');
     const [category, setCategory] = useState('일반');
-    const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [loadingUser, setLoadingUser] = useState(true);
 
     useEffect(() => {
         // 로그인한 사용자 정보 가져오기
-        const user = getUser();
-        if (user) {
-            setAuthor(user.name || user.email || '');
-        } else {
-            // 로그인하지 않은 경우 홈으로 리다이렉트
-            router.push('/');
-        }
+        const fetchUser = async () => {
+            try {
+                setLoadingUser(true);
+                // TODO: 백엔드에서 현재 로그인한 사용자 정보를 가져오는 API로 변경 필요
+                // 현재는 임시로 userId 1 사용
+                const userId = 1;
+                const userData = await getMyPage(userId);
+                setAuthor(userData.nickname || userData.email || '');
+            } catch (error) {
+                console.error('사용자 정보를 불러오는데 실패했습니다:', error);
+                alert('로그인이 필요합니다.');
+                router.push('/');
+            } finally {
+                setLoadingUser(false);
+            }
+        };
+
+        fetchUser();
     }, [router]);
 
     const extractTagsFromContent = (text) => {
@@ -53,10 +64,9 @@ export default function NewQuestionPage() {
     };
 
     const removeTag = (tagToRemove) => {
+        // 태그 목록에서만 제거하고, 내용에는 태그가 그대로 남아있도록 함
+        // 이렇게 하면 태그가 내용에 포함된 상태로 저장됨 (답변 작성 화면과 동일한 방식)
         setTags(tags.filter(tag => tag !== tagToRemove));
-        // 내용에서도 해당 태그 제거
-        const updatedContent = content.replace(new RegExp(`#${tagToRemove}\\s*`, 'g'), '');
-        setContent(updatedContent);
     };
 
     const handleSubmit = async (e) => {
@@ -67,8 +77,7 @@ export default function NewQuestionPage() {
             return;
         }
 
-        const user = getUser();
-        if (!user) {
+        if (!author) {
             alert('로그인이 필요합니다.');
             router.push('/');
             return;
@@ -78,9 +87,9 @@ export default function NewQuestionPage() {
             setLoading(true);
             await createQuestion({
                 title: title.trim(),
-                content: content.trim(),
+                content: content.trim(), // 태그가 포함된 내용이 그대로 저장됨
                 category,
-                tags: tags.length > 0 ? tags : undefined,
+                tagNames: tags.length > 0 ? tags : undefined, // 백엔드 API 형식에 맞게 tagNames 사용
             });
             
             // 성공 시 질문 목록 페이지로 이동
@@ -106,12 +115,14 @@ export default function NewQuestionPage() {
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <Label htmlFor="author">작성자</Label>
+                                <Label htmlFor="question-author">작성자</Label>
                                 <Input
-                                    id="author"
+                                    id="question-author"
                                     value={author}
                                     readOnly
                                     className="bg-gray-100 cursor-not-allowed"
+                                    placeholder={loadingUser ? '사용자 정보 로딩 중...' : '이름을 입력하세요'}
+                                    disabled={loadingUser}
                                 />
                             </div>
 
@@ -143,13 +154,13 @@ export default function NewQuestionPage() {
                             </div>
 
                             <div>
-                                <Label htmlFor="content">내용</Label>
+                                <Label htmlFor="question-content">질문 내용</Label>
                                 <Textarea
-                                    id="content"
+                                    id="question-content"
                                     value={content}
                                     onChange={handleContentChange}
                                     placeholder="질문 내용을 상세히 작성해주세요&#10;&#10;태그를 추가하려면 #태그이름 형식으로 입력하세요 (예: #React #JavaScript)"
-                                    rows={8}
+                                    rows={6}
                                     required
                                 />
                                 <p className="text-xs text-gray-500 mt-1">
@@ -186,7 +197,7 @@ export default function NewQuestionPage() {
                                 >
                                     취소
                                 </Button>
-                                <Button type="submit" disabled={loading}>
+                                <Button type="submit" disabled={loading || loadingUser || !author}>
                                     {loading ? '등록 중...' : '질문 등록'}
                                 </Button>
                             </div>
