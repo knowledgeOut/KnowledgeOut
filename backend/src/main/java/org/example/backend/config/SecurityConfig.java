@@ -62,27 +62,30 @@ public class SecurityConfig {
 
                 // 5. URL 권한 설정
                 .authorizeHttpRequests(auth -> auth
+                        // 공개 접근 가능한 경로 (순서 중요: 구체적인 경로를 먼저)
                         .requestMatchers("/api/knowledgeout/members/signup", "/api/knowledgeout/members/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/knowledgeout", "/api/knowledgeout/questions/**").permitAll()
+                        
+                        // 관리자 전용 경로
                         .requestMatchers("/api/knowledgeout/admin/**").hasRole("ADMIN")
-                        // 회원가입 및 로그인 경로는 누구나 접근 가능
-                        // (로그인 경로도 미리 열어두었습니다)
-                        .requestMatchers(
-                                "/api/knowledgeout/members/signup",
-                                "/api/knowledgeout/auth/login",
-                                // 테스트 용도로 api url 임시 open
-                                "/api/**"
-                        ).permitAll()
-
-                        // 마이페이지 조회 및 수정은 임시로 허용 (인증 구현 전까지)
-                        // TODO: 인증 기능 구현 후 인증 필요로 변경
+                        
+                        // 마이페이지 관련 경로는 인증 필요
                         .requestMatchers(
                                 "/api/knowledgeout/members/mypage",
-                                "/api/knowledgeout/members/**"
-                        ).permitAll()
+                                "/api/knowledgeout/members/mypage/**",
+                                "/api/knowledgeout/members/{id}"
+                        ).authenticated()
 
                         // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
+                )
+                // 인증 실패 시 401/403 에러 반환 (기본 동작)
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(403);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"error\":\"인증이 필요합니다.\"}");
+                        })
                 )
                 .logout(logout -> logout
                         .logoutUrl("/api/knowledgeout/members/logout")
