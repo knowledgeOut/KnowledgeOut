@@ -252,6 +252,7 @@ export default function Home() {
             onAddAnswer={(content, author, tags) => handleAddAnswer(selectedQuestion.id, content, author, tags)}
             onLike={() => handleLike(selectedQuestion.id)}
             isLiked={likedQuestions.has(selectedQuestion.id)}
+            currentUser={currentUser}
           />
         </div>
       </div>

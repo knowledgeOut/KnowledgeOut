@@ -1,13 +1,16 @@
 'use client';
 
-import { ArrowLeft, MessageCircle, Tag, ThumbsUp } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, MessageCircle, Tag, ThumbsUp, Edit, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { AnswerForm } from './AnswerForm';
+import { deleteAnswer } from '@/features/answer/api';
 
-export function QuestionDetail({ question, onBack, onAddAnswer, onLike, isLiked }) {
+export function QuestionDetail({ question, onBack, onAddAnswer, onLike, isLiked, currentUser, onAnswerDeleted }) {
+    const router = useRouter();
     return (
         <div className="space-y-6">
             <Button variant="ghost" onClick={onBack} className="gap-2">
@@ -56,29 +59,81 @@ export function QuestionDetail({ question, onBack, onAddAnswer, onLike, isLiked 
 
                 <AnswerForm onSubmit={onAddAnswer} />
 
-                {question.answers.map((answer) => (
-                    <Card key={answer.id}>
-                        <CardContent className="pt-6">
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                    <span>{answer.author}</span>
-                                    <span>{new Date(answer.createdAt).toLocaleString('ko-KR')}</span>
-                                </div>
-                                <div className="whitespace-pre-wrap">{answer.content}</div>
-                                {answer.tags && answer.tags.length > 0 && (
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <Tag className="w-4 h-4 text-gray-400" />
-                                        {answer.tags.map((tag, index) => (
-                                            <Badge key={index} variant="secondary" className="gap-1">
-                                                #{tag}
-                                            </Badge>
-                                        ))}
+                {question.answers.map((answer) => {
+                    const isAnswerAuthor = currentUser && (
+                        answer.memberId === currentUser.id || 
+                        answer.memberNickname === currentUser.nickname ||
+                        answer.author === currentUser.nickname
+                    );
+
+                    const handleEdit = () => {
+                        router.push(`/questions/${question.id}/answers/${answer.id}/edit`);
+                    };
+
+                    const handleDelete = async () => {
+                        if (!confirm('정말 이 답변을 삭제하시겠습니까?')) {
+                            return;
+                        }
+
+                        try {
+                            await deleteAnswer(question.id, answer.id);
+                            if (onAnswerDeleted) {
+                                onAnswerDeleted(answer.id);
+                            } else {
+                                // 페이지 새로고침 또는 상태 업데이트
+                                window.location.reload();
+                            }
+                        } catch (error) {
+                            alert(error.message || '답변 삭제에 실패했습니다.');
+                        }
+                    };
+
+                    return (
+                        <Card key={answer.id}>
+                            <CardContent className="pt-6">
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                                            <span>{answer.memberNickname || answer.author}</span>
+                                            <span>{new Date(answer.createdAt).toLocaleString('ko-KR')}</span>
+                                        </div>
+                                        {isAnswerAuthor && (
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={handleEdit}
+                                                    className="h-8 px-2"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={handleDelete}
+                                                    className="h-8 px-2 text-red-600 hover:text-red-700"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+                                    <div className="whitespace-pre-wrap">{answer.content}</div>
+                                    {answer.tags && answer.tags.length > 0 && (
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <Tag className="w-4 h-4 text-gray-400" />
+                                            {answer.tags.map((tag, index) => (
+                                                <Badge key={index} variant="secondary" className="gap-1">
+                                                    #{tag}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
             </div>
         </div>
     );
