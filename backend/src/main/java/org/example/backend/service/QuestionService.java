@@ -64,28 +64,36 @@ public class QuestionService {
     }
 
     // 질문 목록 조회 (검색 조건 적용)
-    public Page<QuestionResponseDto> getQuestions(Pageable pageable, String category, String tag, String status) {
-        // 1. Specification 생성 (초기값: 조건 없음)
-        Specification<Question> spec = Specification.where(null);
+    public Page<QuestionResponseDto> getQuestions(Pageable pageable, String category, String tag, String status, String search) {
+        Specification<Question> spec = createSpecification(category, tag, status, search);
+        return questionRepository.findAll(spec, pageable)
+                .map(QuestionResponseDto::fromEntity);
+    }
 
-        // 2. 카테고리 조건 추가
-        if (category != null) {
+    // 질문 개수 조회
+    public org.example.backend.dto.response.QuestionCountDto getQuestionCounts(String category, String search) {
+        long total = questionRepository.count(createSpecification(category, null, null, search));
+        long pending = questionRepository.count(createSpecification(category, null, "WAITING", search));
+        long answered = questionRepository.count(createSpecification(category, null, "ANSWERED", search));
+        return new org.example.backend.dto.response.QuestionCountDto(total, pending, answered);
+    }
+
+    // 공통 Specification 생성 로직
+    private Specification<Question> createSpecification(String category, String tag, String status, String search) {
+        Specification<Question> spec = Specification.where(null);
+        if (search != null && !search.trim().isEmpty()) {
+            spec = spec.and(QuestionSpecification.containsKeyword(search.trim()));
+        }
+        if (category != null && !category.equals("전체") && !category.isEmpty()) {
             spec = spec.and(QuestionSpecification.equalCategory(category));
         }
-
-        // 3. 태그 조건 추가
         if (tag != null) {
             spec = spec.and(QuestionSpecification.hasTag(tag));
         }
-
-        // 4. 상태 조건 추가 (WAITING, ANSWERED) - 현재는 로직 비활성 상태
         if (status != null) {
             spec = spec.and(QuestionSpecification.filterByStatus(status));
         }
-
-        // 5. 조건에 맞는 데이터 조회
-        return questionRepository.findAll(spec, pageable)
-                .map(QuestionResponseDto::fromEntity);
+        return spec;
     }
 
     // 질문 수정
