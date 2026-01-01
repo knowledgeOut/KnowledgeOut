@@ -2,7 +2,7 @@ package org.example.backend.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.backend.dto.request.MemberRequestDto;
+import org.example.backend.dto.request.UpdateMemberRequestDto;
 import org.example.backend.dto.response.MemberResponseDto;
 import org.example.backend.dto.response.MyAnswerResponseDto;
 import org.example.backend.dto.response.QuestionResponseDto;
@@ -38,7 +38,7 @@ public class MemberController {
 
     // 회원 정보 수정
     @PutMapping("/{id}")
-    public ResponseEntity<MemberResponseDto> updateMember(@AuthenticationPrincipal User user, @PathVariable Long id, @Valid @RequestBody MemberRequestDto request) {
+    public ResponseEntity<MemberResponseDto> updateMember(@AuthenticationPrincipal User user, @PathVariable Long id, @Valid @RequestBody UpdateMemberRequestDto request) {
         try {
             // 현재 로그인한 사용자와 수정 대상 사용자가 일치하는지 확인
             Long currentUserId = memberRepository.findByEmail(user.getUsername())
