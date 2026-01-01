@@ -91,4 +91,18 @@ public class MemberController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @DeleteMapping("/mypage/withdraw")
+    public ResponseEntity<Void> withdraw(@AuthenticationPrincipal User user) {
+        try {
+            Long memberId = memberRepository.findByEmail(user.getUsername())
+                    .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."))
+                    .getId();
+
+            memberService.withdraw(memberId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }
