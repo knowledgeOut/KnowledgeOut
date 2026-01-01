@@ -38,10 +38,6 @@ public class Question {
     @Column(nullable = false)
     private int viewCount = 0;
 
-    @ColumnDefault("0")
-    @Column(nullable = false)
-    private int likeCount = 0;
-
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -72,5 +68,11 @@ public class Question {
     public void addQuestionTag(QuestionTag questionTag) {
         this.questionTags.add(questionTag);
         questionTag.setQuestion(this);
+    }
+
+    public void update(String title, String content, Category category) {
+        this.title = title;
+        this.content = content;
+        this.category = category;
     }
 }

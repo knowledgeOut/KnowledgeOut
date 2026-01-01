@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Search, Plus, User as UserIcon } from 'lucide-react';
 import { QuestionList } from '@/components/common/QuestionList';
@@ -88,6 +89,7 @@ const initialQuestions = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [questions, setQuestions] = useState(initialQuestions);
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -354,7 +356,17 @@ export default function Home() {
               <SelectItem value="answered">답변완료</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={() => setShowForm(true)} className="gap-2">
+          <Button
+            onClick={() => {
+              if (currentUser) {
+                router.push('/questions/new');
+              } else {
+                setAuthDialogTab('login');
+                setShowAuthDialog(true);
+              }
+            }}
+            className="gap-2"
+          >
             <Plus className="w-4 h-4" />
             질문 작성
           </Button>
