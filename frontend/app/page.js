@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Search, Plus, User as UserIcon } from 'lucide-react';
+import { Search, Plus, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { QuestionList } from '@/components/common/QuestionList';
 import { QuestionForm } from '@/components/common/QuestionForm';
 import { QuestionDetail } from '@/components/common/QuestionDetail';
@@ -11,7 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthDialog } from '@/components/common/AuthDialog';
-import { MyPage } from '@/components/common/MyPage';
+import { MyPageUserInfoSection } from '@/components/common/MyPageUserInfoSection';
+import { MyPageActivityTabs } from '@/components/common/MyPageActivityTabs';
+import { getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
 import { getMyPage } from '@/features/member/api';
 
 const initialQuestions = [
@@ -102,6 +104,12 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState(null);
   const [showMyPage, setShowMyPage] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  // 마이페이지 활동 데이터 상태
+  const [myQuestions, setMyQuestions] = useState([]);
+  const [myAnswers, setMyAnswers] = useState([]);
+  const [likedQuestionsList, setLikedQuestionsList] = useState([]);
+  const [loadingMyPage, setLoadingMyPage] = useState(false);
+  const [activeTab, setActiveTab] = useState('questions');
 
   // 페이지 로드 시 로그인 상태 확인
   useEffect(() => {
@@ -124,6 +132,38 @@ export default function Home() {
 
     checkAuth();
   }, []);
+
+  // 마이페이지 데이터 로딩
+  useEffect(() => {
+    const fetchMyPageData = async () => {
+      if (showMyPage && currentUser) {
+        try {
+          setLoadingMyPage(true);
+          const [questionsData, answersData, likesData] = await Promise.all([
+            getMyQuestions(),
+            getMyAnswers(),
+            getMyQuestionLikes(),
+          ]);
+          
+          setMyQuestions(questionsData || []);
+          setMyAnswers(answersData || []);
+          setLikedQuestionsList(likesData || []);
+        } catch (error) {
+          console.error('마이페이지 데이터를 불러오는데 실패했습니다:', error);
+          if (error.message?.includes('로그인') || error.response?.status === 401 || error.response?.status === 403) {
+            alert('로그인이 필요합니다.');
+            setShowMyPage(false);
+            return;
+          }
+          alert('데이터를 불러오는데 실패했습니다.');
+        } finally {
+          setLoadingMyPage(false);
+        }
+      }
+    };
+
+    fetchMyPageData();
+  }, [showMyPage, currentUser]);
 
   const handleLogin = (user) => {
     setCurrentUser(user);
@@ -225,17 +265,30 @@ export default function Home() {
   if (showMyPage && currentUser) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
-          <MyPage
-            user={currentUser}
-            questions={questions}
-            likedQuestionIds={Array.from(likedQuestions)}
-            onBack={() => setShowMyPage(false)}
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" onClick={() => setShowMyPage(false)} className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              돌아가기
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              로그아웃
+            </Button>
+          </div>
+
+          <MyPageUserInfoSection user={currentUser} onLogout={handleLogout} />
+
+          <MyPageActivityTabs
+            myQuestions={myQuestions}
+            myAnswers={myAnswers}
+            likedQuestions={likedQuestionsList}
+            loading={loadingMyPage}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
             onSelectQuestion={(id) => {
               setShowMyPage(false);
               setSelectedQuestionId(id);
             }}
-            onLogout={handleLogout}
           />
         </div>
       </div>
@@ -252,6 +305,7 @@ export default function Home() {
             onAddAnswer={(content, author, tags) => handleAddAnswer(selectedQuestion.id, content, author, tags)}
             onLike={() => handleLike(selectedQuestion.id)}
             isLiked={likedQuestions.has(selectedQuestion.id)}
+            currentUser={currentUser}
           />
         </div>
       </div>
