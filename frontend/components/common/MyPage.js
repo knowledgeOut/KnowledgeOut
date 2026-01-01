@@ -1,13 +1,52 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, User, FileText, MessageCircle, ThumbsUp, Mail } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import * as memberApi from '../../features/member/api';
+import * as authApi from '../../features/auth/api';
 
 export function MyPage({ user, questions, likedQuestionIds, onBack, onSelectQuestion, onLogout }) {
+    const router = useRouter();
+    const [withdrawing, setWithdrawing] = useState(false);
+
+    const handleWithdraw = async () => {
+        if (!confirm('정말로 회원 탈퇴를 하시겠습니까?\n탈퇴 후에는 복구할 수 없습니다.')) {
+            return;
+        }
+
+        try {
+            setWithdrawing(true);
+            // 회원 탈퇴 처리
+            await memberApi.withdraw();
+            
+            // 로그아웃 API 호출 (세션 무효화) - 에러가 나도 무시하고 진행
+            try {
+                await authApi.logout();
+            } catch (logoutErr) {
+                // 로그아웃 에러는 무시하고 진행 (이미 탈퇴는 완료됨)
+                console.error('로그아웃 중 오류:', logoutErr);
+            }
+            
+            // 로그아웃 콜백 호출 (부모 컴포넌트에서 로그아웃 처리)
+            if (onLogout) {
+                onLogout();
+            }
+            
+            // 메인 홈페이지로 리다이렉트
+            alert('회원 탈퇴가 완료되었습니다.');
+            router.push('/');
+        } catch (err) {
+            alert(err.message || '회원 탈퇴에 실패했습니다.');
+        } finally {
+            setWithdrawing(false);
+        }
+    };
     // 내가 작성한 질문
     const myQuestions = questions.filter(q => q.author === user.name);
 
@@ -38,16 +77,25 @@ export function MyPage({ user, questions, likedQuestionIds, onBack, onSelectQues
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <User className="w-5 h-5" />
-                        회원 정보
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                            <User className="w-5 h-5" />
+                            회원 정보
+                        </CardTitle>
+                        <button
+                            onClick={handleWithdraw}
+                            disabled={withdrawing}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                        >
+                            {withdrawing ? '처리 중...' : '회원탈퇴'}
+                        </button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-3">
                         <div className="flex items-center gap-3">
                             <span className="text-gray-500 w-20">이름</span>
-                            <span className="font-medium">{user.name}</span>
+                            <span className="font-medium">{!user.name || user.name.startsWith('deletedUser_') ? '탈퇴한 사용자' : user.name}</span>
                         </div>
                         <Separator />
                         <div className="flex items-center gap-3">

@@ -274,7 +274,7 @@ export default function MyPage() {
                             <div className="space-y-3">
                                 <div className="flex items-center gap-3">
                                     <span className="text-sm text-gray-500 w-20">이름</span>
-                                    <span className="font-medium text-gray-900">{user?.nickname || '-'}</span>
+                                    <span className="font-medium text-gray-900">{!user?.nickname || user.nickname.startsWith('deletedUser_') ? '탈퇴한 사용자' : user.nickname}</span>
                                 </div>
                                 <div className="h-px bg-gray-200"></div>
                                 <div className="flex items-center gap-3">

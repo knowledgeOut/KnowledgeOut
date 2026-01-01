@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthDialog } from '@/components/common/AuthDialog';
 import { MyPage } from '@/components/common/MyPage';
 import { getMyPage } from '@/features/member/api';
+import * as authApi from '@/features/auth/api';
 
 const initialQuestions = [
   {
@@ -133,10 +134,19 @@ export default function Home() {
     setCurrentUser(user);
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setShowMyPage(false);
-    setLikedQuestions(new Set());
+  const handleLogout = async () => {
+    try {
+      // 백엔드 로그아웃 API 호출 (세션 무효화 및 쿠키 삭제)
+      await authApi.logout();
+    } catch (error) {
+      // 로그아웃 API 에러가 나도 로컬 상태는 초기화
+      console.error('로그아웃 중 오류:', error);
+    } finally {
+      // 로컬 상태 초기화
+      setCurrentUser(null);
+      setShowMyPage(false);
+      setLikedQuestions(new Set());
+    }
   };
 
   const handleAddQuestion = (newQuestion) => {
@@ -285,7 +295,7 @@ export default function Home() {
                 <>
                   <span className="flex items-center gap-2 text-gray-700">
                     <UserIcon className="w-4 h-4" />
-                    {currentUser.name}님
+                    {(!currentUser.name || currentUser.name.startsWith('deletedUser_') ? '탈퇴한 사용자' : currentUser.name)}님
                   </span>
                   <Button
                     variant="outline"
