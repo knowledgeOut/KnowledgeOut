@@ -31,7 +31,7 @@ export function QuestionList({ questions, onSelectQuestion }) {
                         <p className="text-gray-600 line-clamp-2 mb-4">{question.content}</p>
                         <div className="flex items-center justify-between text-sm text-gray-500">
                             <div className="flex items-center gap-4">
-                                <span>{question.author}</span>
+                                <span>{!question.author || question.author.startsWith('deletedUser_') ? '탈퇴한 사용자' : question.author}</span>
                                 <span>{new Date(question.createdAt).toLocaleDateString('ko-KR')}</span>
                             </div>
                             <div className="flex items-center gap-3">
