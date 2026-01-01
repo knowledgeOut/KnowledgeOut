@@ -81,22 +81,57 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
         setIsSubmitting(true);
 
         try {
+            // 회원가입 요청
             await signup({
                 email: signupEmail,
                 password: signupPassword,
                 nickname: signupNickname,
             });
             
-            // 회원가입 성공
-            if (onSignup) {
-                onSignup({ email: signupEmail, nickname: signupNickname });
+            // 회원가입 성공 후 자동 로그인하여 사용자 정보 가져오기
+            try {
+                await login({
+                    email: signupEmail,
+                    password: signupPassword,
+                });
+                
+                // 로그인 성공 후 사용자 정보 가져오기
+                try {
+                    const userData = await getMyPage();
+                    if (onSignup) {
+                        onSignup({
+                            id: userData.id,
+                            email: userData.email,
+                            nickname: userData.nickname,
+                            name: userData.nickname, // name 필드도 nickname으로 설정
+                        });
+                    }
+                } catch (userError) {
+                    // 사용자 정보 가져오기 실패 시 기본 정보만 전달
+                    if (onSignup) {
+                        onSignup({ 
+                            email: signupEmail, 
+                            nickname: signupNickname 
+                        });
+                    }
+                }
+            } catch (loginError) {
+                // 자동 로그인 실패 시 회원가입 정보만 전달
+                if (onSignup) {
+                    onSignup({ 
+                        email: signupEmail, 
+                        nickname: signupNickname 
+                    });
+                }
             }
+            
             setSignupEmail('');
             setSignupPassword('');
             setSignupNickname('');
             setSignupConfirmPassword('');
             onClose();
             alert('회원가입이 완료되었습니다!');
+            router.push('/');
         } catch (error) {
             setSignupError(error.message || '회원가입에 실패했습니다.');
         } finally {
