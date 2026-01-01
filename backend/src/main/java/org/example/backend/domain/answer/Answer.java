@@ -10,8 +10,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Getter
@@ -48,5 +46,10 @@ public class Answer {
         this.content = content;
         this.question = question;
         this.member = member;
+    }
+
+    // 답변 수정 메서드
+    public void update(String content) {
+        this.content = content;
     }
 }

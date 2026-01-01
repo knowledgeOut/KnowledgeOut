@@ -15,6 +15,7 @@ public class QuestionResponseDto {
     private String title;
     private String content;
     private int viewCount;
+    private int likeCount;
     private int answerCount; // [추가] 답변 개수 (프론트엔드 상태 표시용)
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
@@ -25,7 +26,9 @@ public class QuestionResponseDto {
     private Long categoryId;
     private String categoryName;   
 
-    private List<String> tagNames; 
+    private List<String> tagNames;
+    
+    private List<AnswerResponseDto> answers;
 
     public static QuestionResponseDto fromEntity(Question question) {
         return new QuestionResponseDto(
@@ -33,6 +36,7 @@ public class QuestionResponseDto {
                 question.getTitle(),
                 question.getContent(),
                 question.getViewCount(),
+                0, // TODO: likeCount는 QuestionLikeRepository를 통해 계산 필요
                 question.getAnswers().size(), // [추가] 답변 리스트 크기
                 question.getCreatedAt(),
                 question.getModifiedAt(),
@@ -45,6 +49,10 @@ public class QuestionResponseDto {
                 // Tag 정보
                 question.getQuestionTags().stream()
                         .map(qt -> qt.getTag().getName())
+                        .collect(Collectors.toList()),
+                // Answers 정보
+                question.getAnswers().stream()
+                        .map(AnswerResponseDto::fromEntity)
                         .collect(Collectors.toList())
         );
     }

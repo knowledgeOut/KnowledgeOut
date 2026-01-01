@@ -27,4 +27,36 @@ public class AnswerService {
 
         return answerRepository.save(answer).getId();
     }
+
+    @Transactional
+    public void updateAnswer(String userEmail, Long questionId, Long answerId, AnswerRequestDto request) {
+        Answer answer = answerRepository.findById(answerId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 답변입니다."));
+
+        if (!answer.getQuestion().getId().equals(questionId)) {
+            throw new IllegalArgumentException("질문과 답변이 일치하지 않습니다.");
+        }
+
+        if (!answer.getMember().getEmail().equals(userEmail)) {
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
+
+        answer.update(request.getContent());
+    }
+
+    @Transactional
+    public void deleteAnswer(String userEmail, Long questionId, Long answerId) {
+        Answer answer = answerRepository.findById(answerId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 답변입니다."));
+
+        if (!answer.getQuestion().getId().equals(questionId)) {
+            throw new IllegalArgumentException("질문과 답변이 일치하지 않습니다.");
+        }
+
+        if (!answer.getMember().getEmail().equals(userEmail)) {
+            throw new IllegalStateException("삭제 권한이 없습니다.");
+        }
+
+        answerRepository.delete(answer);
+    }
 }

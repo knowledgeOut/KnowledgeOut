@@ -19,4 +19,23 @@ public class AnswerController {
         Long answerId = answerService.addAnswer(user.getUsername(), id, request);
         return ResponseEntity.ok(answerId);
     }
+
+    @PutMapping("/{answerId}")
+    public ResponseEntity<Void> updateAnswer(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id,
+            @PathVariable Long answerId,
+            @RequestBody AnswerRequestDto request) {
+        answerService.updateAnswer(user.getUsername(), id, answerId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{answerId}")
+    public ResponseEntity<Void> deleteAnswer(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id,
+            @PathVariable Long answerId) {
+        answerService.deleteAnswer(user.getUsername(), id, answerId);
+        return ResponseEntity.ok().build();
+    }
 }
