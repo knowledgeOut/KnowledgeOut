@@ -98,3 +98,23 @@ export async function getMyQuestionLikes() {
   }
 }
 
+/**
+ * 회원 탈퇴
+ * 백엔드에서 SecurityContext에서 현재 로그인한 사용자 정보를 가져옵니다.
+ * @returns {Promise<void>}
+ */
+export async function withdraw() {
+  try {
+    const response = await apiClient.delete('/members/mypage/withdraw');
+    return response;
+  } catch (error) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    if (error.response?.status === 404) {
+      throw new Error('회원 탈퇴 API를 찾을 수 없습니다. 백엔드 서버를 확인해주세요.');
+    }
+    throw new Error(error.message || '회원 탈퇴에 실패했습니다.');
+  }
+}
+

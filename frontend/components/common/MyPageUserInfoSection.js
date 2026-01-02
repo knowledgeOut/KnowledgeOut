@@ -9,7 +9,8 @@ import { Separator } from '../ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { updateMember } from '@/features/member/api';
+import { updateMember, withdraw } from '@/features/member/api';
+import * as authApi from '@/features/auth/api';
 
 export function MyPageUserInfoSection({ user, onLogout }) {
     const router = useRouter();
@@ -21,6 +22,7 @@ export function MyPageUserInfoSection({ user, onLogout }) {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [passwordError, setPasswordError] = useState('');
+    const [isWithdrawing, setIsWithdrawing] = useState(false);
 
     // 사용자 정보가 변경되면 폼 초기화
     useEffect(() => {
@@ -123,6 +125,48 @@ export function MyPageUserInfoSection({ user, onLogout }) {
         setPasswordError('');
     };
 
+    const handleWithdraw = async () => {
+        // 확인 다이얼로그
+        const confirmed = window.confirm('정말 회원 탈퇴를 하시겠습니까? 탈퇴한 계정은 복구할 수 없습니다.');
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            setIsWithdrawing(true);
+            
+            // 백엔드 회원 탈퇴 API 호출
+            await withdraw();
+            
+            // 로그아웃 처리
+            try {
+                await authApi.logout();
+            } catch (logoutError) {
+                console.error('로그아웃 중 오류:', logoutError);
+                // 로그아웃 실패해도 계속 진행
+            }
+            
+            // 로그아웃 콜백 호출 (상태 초기화)
+            if (onLogout) {
+                onLogout();
+            }
+            
+            alert('회원 탈퇴가 완료되었습니다.');
+            
+            // 메인페이지로 리다이렉트 후 페이지 새로고침하여 상태 완전히 초기화
+            router.push('/');
+            
+            // 약간의 지연 후 페이지 새로고침하여 모든 상태 초기화
+            setTimeout(() => {
+                window.location.reload();
+            }, 100);
+        } catch (error) {
+            alert(error.message || '회원 탈퇴에 실패했습니다.');
+        } finally {
+            setIsWithdrawing(false);
+        }
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -131,13 +175,14 @@ export function MyPageUserInfoSection({ user, onLogout }) {
                         <User className="w-5 h-5" />
                         회원 정보
                     </CardTitle>
-                    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2">
-                                <Edit className="w-4 h-4" />
-                                수정
-                            </Button>
-                        </DialogTrigger>
+                    <div className="flex items-center gap-2">
+                        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="gap-2">
+                                    <Edit className="w-4 h-4" />
+                                    수정
+                                </Button>
+                            </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>회원 정보 수정</DialogTitle>
@@ -220,6 +265,16 @@ export function MyPageUserInfoSection({ user, onLogout }) {
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
+                    <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={handleWithdraw}
+                        disabled={isWithdrawing}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                        {isWithdrawing ? '처리 중...' : '회원탈퇴'}
+                    </Button>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
@@ -227,7 +282,10 @@ export function MyPageUserInfoSection({ user, onLogout }) {
                     <div className="flex items-center gap-3">
                         <User className="w-4 h-4 text-gray-500" />
                         <span className="text-gray-500 w-16">닉네임</span>
-                        <span className="font-medium">{user.nickname || user.name}</span>
+                        <span className="font-medium">{(() => {
+                            const nickname = user.nickname || user.name;
+                            return !nickname || nickname.startsWith('deletedUser_') ? '탈퇴한 사용자' : nickname;
+                        })()}</span>
                     </div>
                     <Separator />
                     <div className="flex items-center gap-3">

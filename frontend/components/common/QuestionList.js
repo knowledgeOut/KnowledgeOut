@@ -49,10 +49,10 @@ export function QuestionList({ questions, onSelectQuestion }) {
                         <CardContent>
                             <p className="text-gray-600 line-clamp-2 mb-4">{question.content}</p>
                             <div className="flex items-center justify-between text-sm text-gray-500">
-                                <div className="flex items-center gap-4">
-                                    <span>{question.memberNickname}</span>
-                                    <span>{new Date(question.createdAt).toLocaleDateString('ko-KR')}</span>
-                                </div>
+                            <div className="flex items-center gap-4">
+                                <span>{!question.memberNickname || question.memberNickname.startsWith('deletedUser_') ? '탈퇴한 사용자' : question.memberNickname}</span>
+                                <span>{new Date(question.createdAt).toLocaleDateString('ko-KR')}</span>
+                            </div>
                                 <div className="flex items-center gap-3">
                                     <div className="flex items-center gap-1">
                                         <Eye className="w-4 h-4" />
