@@ -81,7 +81,7 @@ public class MemberService {
                 .toList();
     }
 
-    public List<QuestionResponseDto> getMyQuestionLikes(Long memberId) {
+    public List<QuestionResponseDto> getMyLikedQuestions(Long memberId) {
         return questionLikeRepository.findByMemberId(memberId)
                 .stream()
                 .map(like -> QuestionResponseDto.fromEntity(like.getQuestion()))

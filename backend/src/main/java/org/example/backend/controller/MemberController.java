@@ -81,12 +81,12 @@ public class MemberController {
     }
 
     @GetMapping("/mypage/likes")
-    public ResponseEntity<List<QuestionResponseDto>> myQuestionLikes(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<QuestionResponseDto>> myLikedQuestions(@AuthenticationPrincipal User user) {
         try {
             Long memberId = memberRepository.findByEmail(user.getUsername())
                     .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."))
                     .getId();
-            return ResponseEntity.ok(memberService.getMyQuestionLikes(memberId));
+            return ResponseEntity.ok(memberService.getMyLikedQuestions(memberId));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
