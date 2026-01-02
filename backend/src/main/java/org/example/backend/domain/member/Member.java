@@ -12,6 +12,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
@@ -23,7 +24,7 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String email;
 
     @Column(nullable = false)
@@ -68,6 +69,20 @@ public class Member {
     public void withdraw() {
         this.status = MemberStatus.DELETED;
         this.email = null;
+        this.nickname = generateDeletedUserNickname();
+    }
+
+    // 탈퇴한 사용자용 닉네임 생성 (deletedUser_ + 12자리 무작위 문자열)
+    private String generateDeletedUserNickname() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder(12);
+        
+        for (int i = 0; i < 12; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        
+        return "deletedUser_" + sb.toString();
     }
 
     public boolean isActive() {

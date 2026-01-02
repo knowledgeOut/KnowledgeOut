@@ -31,7 +31,8 @@ export function QuestionDetail({ question, onBack, onAddAnswer, onDeleteAnswer, 
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4 text-sm text-gray-500">
-                                <span>{question.author}</span>
+                                {/*<span>{question.author}</span>*/}
+                                <span>{!question.author || question.author.startsWith('deletedUser_') ? '탈퇴한 사용자' : question.author}</span>
                                 <span>{new Date(question.createdAt).toLocaleString('ko-KR')}</span>
                             </div>
                             <Button
@@ -61,9 +62,9 @@ export function QuestionDetail({ question, onBack, onAddAnswer, onDeleteAnswer, 
                 {question.answers.map((answer) => {
                     // 현재 사용자가 작성한 답변인지 확인
                     const isMyAnswer = currentUser && (
-                        answer.memberId === currentUser.id || 
+                        answer.memberId === currentUser.id ||
                         answer.memberId?.toString() === currentUser.id?.toString() ||
-                        answer.author === currentUser.nickname || 
+                        answer.author === currentUser.nickname ||
                         answer.author === currentUser.name
                     );
 
