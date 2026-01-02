@@ -34,9 +34,19 @@ public class QuestionController {
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String tag,
-            @RequestParam(required = false) String status
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search
     ) {
-        return ResponseEntity.ok(questionService.getQuestions(pageable, category, tag, status));
+        return ResponseEntity.ok(questionService.getQuestions(pageable, category, tag, status, search));
+    }
+
+    // 질문 개수 조회
+    @GetMapping("/count-summary")
+    public ResponseEntity<org.example.backend.dto.response.QuestionCountDto> getQuestionCounts(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String search
+    ) {
+        return ResponseEntity.ok(questionService.getQuestionCounts(category, search));
     }
 
     // 질문 상세 조회
