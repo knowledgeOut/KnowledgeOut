@@ -8,7 +8,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
  */
 export async function POST(request, { params }) {
     try {
-        const { id } = params;
+        // Next.js 15: params는 Promise이므로 await로 unwrap
+        const { id } = await params;
         const body = await request.json();
 
         const response = await fetch(`${API_BASE_URL}/questions/${id}/answers`, {
@@ -44,7 +45,8 @@ export async function POST(request, { params }) {
  */
 export async function PUT(request, { params }) {
     try {
-        const { id } = params;
+        // Next.js 15: params는 Promise이므로 await로 unwrap
+        const { id } = await params;
         const body = await request.json();
 
         const response = await fetch(`${API_BASE_URL}/questions/${id}/answers`, {
@@ -80,7 +82,8 @@ export async function PUT(request, { params }) {
  */
 export async function DELETE(request, { params }) {
     try {
-        const { id } = params;
+        // Next.js 15: params는 Promise이므로 await로 unwrap
+        const { id } = await params;
         const { searchParams } = new URL(request.url);
         const answerId = searchParams.get('answerId');
 

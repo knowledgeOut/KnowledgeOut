@@ -2,49 +2,61 @@
  * 질문 관련 커스텀 훅
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import * as questionApi from './api';
 
 /**
  * 질문 목록 조회 훅
+ * Spring Data Page 응답 구조 처리
  */
 export function useQuestions(params = {}) {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pageInfo, setPageInfo] = useState({
+    totalPages: 0,
+    totalElements: 0,
+    currentPage: 0,
+    size: 10,
+    first: true,
+    last: true,
+  });
 
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await questionApi.getQuestions(params);
-        setQuestions(Array.isArray(data) ? data : data.questions || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const fetchQuestions = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await questionApi.getQuestions(params);
+      
+      // Spring Data Page 응답 구조 처리
+      if (data && data.content) {
+        setQuestions(data.content);
+        setPageInfo({
+          totalPages: data.totalPages || 0,
+          totalElements: data.totalElements || 0,
+          currentPage: data.number || 0,
+          size: data.size || 10,
+          first: data.first ?? true,
+          last: data.last ?? true,
+        });
+      } else if (Array.isArray(data)) {
+        setQuestions(data);
+      } else {
+        setQuestions([]);
       }
-    };
-
-    fetchQuestions();
+    } catch (err) {
+      setError(err.message);
+      setQuestions([]);
+    } finally {
+      setLoading(false);
+    }
   }, [JSON.stringify(params)]);
 
-  return { questions, loading, error, refetch: () => {
-    const fetchQuestions = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await questionApi.getQuestions(params);
-        setQuestions(Array.isArray(data) ? data : data.questions || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  useEffect(() => {
     fetchQuestions();
-  }};
+  }, [fetchQuestions]);
+
+  return { questions, loading, error, pageInfo, refetch: fetchQuestions };
 }
 
 /**
