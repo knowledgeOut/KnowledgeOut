@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthDialog } from '@/components/common/AuthDialog';
-import { MyPage } from '@/components/common/MyPage';
-import { getMyPage } from '@/features/member/api';
+import { MyPageUserInfoSection } from '@/components/common/MyPageUserInfoSection';
+import { MyPageActivityTabs } from '@/components/common/MyPageActivityTabs';
+import { getMyPage, getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
 import { useQuestions } from '@/features/question/hooks';
 import { getCategories } from '@/features/category/api';
 import { getQuestionCounts } from '@/features/question/api';
@@ -40,6 +41,13 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(0);
   const [counts, setCounts] = useState({ totalCount: 0, pendingCount: 0, answeredCount: 0 });
   const pageSize = 10;
+  
+  // 마이페이지 활동 데이터
+  const [myQuestions, setMyQuestions] = useState([]);
+  const [myAnswers, setMyAnswers] = useState([]);
+  const [likedQuestions, setLikedQuestions] = useState([]);
+  const [loadingActivity, setLoadingActivity] = useState(false);
+  const [activeTab, setActiveTab] = useState('questions');
 
   // API 파라미터 설정
   const apiParams = {
@@ -102,6 +110,32 @@ export default function Home() {
     fetchCounts();
   }, [selectedCategory, searchQuery]);
 
+  // 마이페이지 표시 시 활동 데이터 조회
+  useEffect(() => {
+    if (showMyPage && currentUser) {
+      const fetchActivityData = async () => {
+        try {
+          setLoadingActivity(true);
+          const [questionsData, answersData, likesData] = await Promise.all([
+            getMyQuestions(),
+            getMyAnswers(),
+            getMyQuestionLikes(),
+          ]);
+          
+          setMyQuestions(questionsData || []);
+          setMyAnswers(answersData || []);
+          setLikedQuestions(likesData || []);
+        } catch (error) {
+          console.error('마이페이지 데이터를 불러오는데 실패했습니다:', error);
+        } finally {
+          setLoadingActivity(false);
+        }
+      };
+
+      fetchActivityData();
+    }
+  }, [showMyPage, currentUser]);
+
   const handleLogin = (user) => {
     setCurrentUser(user);
   };
@@ -149,14 +183,23 @@ export default function Home() {
   if (showMyPage && currentUser) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
-          <MyPage
-            user={currentUser}
-            questions={questions}
-            likedQuestionIds={[]}
-            onBack={() => setShowMyPage(false)}
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center justify-end">
+            <Button variant="outline" onClick={() => setShowMyPage(false)}>
+              돌아가기
+            </Button>
+          </div>
+
+          <MyPageUserInfoSection user={currentUser} onLogout={handleLogout} />
+
+          <MyPageActivityTabs
+            myQuestions={myQuestions}
+            myAnswers={myAnswers}
+            likedQuestions={likedQuestions}
+            loading={loadingActivity}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
             onSelectQuestion={handleSelectQuestion}
-            onLogout={handleLogout}
           />
         </div>
       </div>
