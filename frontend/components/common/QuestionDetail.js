@@ -7,7 +7,7 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { AnswerForm } from './AnswerForm';
 
-export function QuestionDetail({ question, onBack, onAddAnswer, onLike, isLiked }) {
+export function QuestionDetail({ question, onBack, onAddAnswer, onLike, isLiked, currentUser }) {
     return (
         <div className="space-y-6">
             <Button variant="ghost" onClick={onBack} className="gap-2">
@@ -54,7 +54,7 @@ export function QuestionDetail({ question, onBack, onAddAnswer, onLike, isLiked 
                     <h3 className="text-lg">답변 {question.answers.length}개</h3>
                 </div>
 
-                <AnswerForm onSubmit={onAddAnswer} />
+                <AnswerForm onSubmit={onAddAnswer} currentUser={currentUser} />
 
                 {question.answers.map((answer) => (
                     <Card key={answer.id}>
