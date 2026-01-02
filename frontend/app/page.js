@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Search, Plus, User as UserIcon, ArrowLeft } from 'lucide-react';
+import { Search, Plus, User as UserIcon, ArrowLeft, LayoutDashboard } from 'lucide-react';
 import { QuestionList } from '@/components/common/QuestionList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -71,6 +71,7 @@ export default function Home() {
           email: userData.email,
           nickname: userData.nickname,
           name: userData.nickname,
+          role: userData.role,
         });
       } catch (error) {
         setCurrentUser(null);
@@ -250,6 +251,16 @@ export default function Home() {
                   >
                     마이페이지
                   </Button>
+                  {currentUser.role === 'ROLE_ADMIN' && (
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push('/admin/dashboard')}
+                      className="gap-2"
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      대시보드
+                    </Button>
+                  )}
                   <Button variant="outline" onClick={handleLogout}>
                     로그아웃
                   </Button>

@@ -43,6 +43,7 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
                         email: userData.email,
                         nickname: userData.nickname,
                         name: userData.nickname, // name 필드도 nickname으로 설정
+                        role: userData.role, // 관리자 권한 확인을 위해 role 추가
                     });
                 }
             } catch (userError) {
@@ -104,6 +105,7 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
                             email: userData.email,
                             nickname: userData.nickname,
                             name: userData.nickname, // name 필드도 nickname으로 설정
+                            role: userData.role, // 관리자 권한 확인을 위해 role 추가
                         });
                     }
                 } catch (userError) {
