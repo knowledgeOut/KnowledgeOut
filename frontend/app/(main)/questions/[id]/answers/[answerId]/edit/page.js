@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { updateAnswer } from '@/features/answer/api';
-import { getQuestion } from '@/features/question/api';
+import { updateAnswer, getAnswers } from '@/features/answer/api';
 
 export default function EditAnswerPage({ params }) {
     const router = useRouter();
@@ -17,14 +16,17 @@ export default function EditAnswerPage({ params }) {
     const [loadingAnswer, setLoadingAnswer] = useState(true);
 
     useEffect(() => {
-        // 질문 상세 정보를 가져와서 답변 찾기
+        // 답변 목록을 가져와서 해당 답변 찾기
         const fetchAnswer = async () => {
             try {
                 setLoadingAnswer(true);
-                const question = await getQuestion(id);
+                const answers = await getAnswers(id);
 
-                // 답변 찾기
-                const answer = question.answers?.find(a => a.id === Number(answerId));
+                // 답변 찾기 (ID 비교 시 타입 변환 고려)
+                const answer = answers?.find(a => 
+                    Number(a.id) === Number(answerId) || 
+                    String(a.id) === String(answerId)
+                );
 
                 if (!answer) {
                     alert('답변을 찾을 수 없습니다.');
@@ -42,7 +44,9 @@ export default function EditAnswerPage({ params }) {
             }
         };
 
-        fetchAnswer();
+        if (id && answerId) {
+            fetchAnswer();
+        }
     }, [id, answerId, router]);
 
     const handleSubmit = async (e) => {
