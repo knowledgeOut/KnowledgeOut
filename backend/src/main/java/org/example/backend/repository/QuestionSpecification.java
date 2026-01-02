@@ -48,12 +48,12 @@ public class QuestionSpecification {
     public static Specification<Question> containsKeyword(String keyword) {
         return (root, query, criteriaBuilder) -> {
             if (keyword == null || keyword.isEmpty()) return null;
-            String likePattern = "%" + keyword + "%"; // LIKE %keyword%
+            String likePattern = "%" + keyword.toLowerCase() + "%"; // LIKE %keyword%
 
-            // 제목 또는(OR) 내용에 키워드가 포함되면 검색
+            // 제목 또는(OR) 내용에 키워드가 포함되면 검색 (대소문자 무시)
             return criteriaBuilder.or(
-                    criteriaBuilder.like(root.get("title"), likePattern),
-                    criteriaBuilder.like(root.get("content"), likePattern)
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), likePattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("content")), likePattern)
             );
         };
     }

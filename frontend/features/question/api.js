@@ -6,17 +6,72 @@ import apiClient from '../../lib/axios';
 
 /**
  * 질문 목록 조회
- * @param {Object} params - { page?, size?, sort? }
- * @returns {Promise<Object>} 질문 목록
+ * @param {Object} params - { page?, size?, sort?, category?, tag?, status?, search? }
+ * @returns {Promise<Object>} Spring Data Page 응답
  */
 export async function getQuestions(params = {}) {
   try {
-    const queryString = new URLSearchParams(params).toString();
+    // Spring Data Pageable 파라미터 변환
+    const queryParams = {};
+    
+    // 페이지 파라미터 (page는 0부터 시작)
+    if (params.page !== undefined) {
+      queryParams.page = params.page;
+    }
+    if (params.size !== undefined) {
+      queryParams.size = params.size;
+    }
+    if (params.sort) {
+      queryParams.sort = params.sort;
+    }
+    
+    // 검색 파라미터
+    if (params.search && params.search.trim()) {
+      queryParams.search = params.search.trim();
+    }
+    
+    // 필터 파라미터
+    if (params.category && params.category !== '전체') {
+      queryParams.category = params.category;
+    }
+    if (params.tag) {
+      queryParams.tag = params.tag;
+    }
+    if (params.status && params.status !== '전체') {
+      queryParams.status = params.status;
+    }
+    
+    const queryString = new URLSearchParams(queryParams).toString();
     const url = queryString ? `/questions?${queryString}` : '/questions';
     const response = await apiClient.get(url);
     return response;
   } catch (error) {
     throw new Error(error.message || '질문 목록을 불러올 수 없습니다.');
+  }
+}
+
+/**
+ * 질문 개수 조회 (상태별)
+ * @param {Object} params - { category?, search? }
+ * @returns {Promise<Object>} { totalCount, pendingCount, answeredCount }
+ */
+export async function getQuestionCounts(params = {}) {
+  try {
+    const queryParams = {};
+    if (params.category && params.category !== '전체') {
+      queryParams.category = params.category;
+    }
+    if (params.search && params.search.trim()) {
+      queryParams.search = params.search.trim();
+    }
+    
+    const queryString = new URLSearchParams(queryParams).toString();
+    const url = queryString ? `/questions/count-summary?${queryString}` : '/questions/count-summary';
+    const response = await apiClient.get(url);
+    return response;
+  } catch (error) {
+    console.error('질문 개수 조회 실패:', error);
+    return { totalCount: 0, pendingCount: 0, answeredCount: 0 };
   }
 }
 
