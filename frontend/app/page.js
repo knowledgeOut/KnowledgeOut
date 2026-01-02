@@ -157,9 +157,19 @@ export default function Home() {
     setCurrentUser(user);
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setShowMyPage(false);
+  const handleLogout = async () => {
+    try {
+      // 백엔드 로그아웃 API 호출 (세션 무효화)
+      const { logout } = await import('@/features/auth/api');
+      await logout();
+    } catch (error) {
+      console.error('로그아웃 중 오류:', error);
+      // 로그아웃 API 에러가 나도 로컬 상태는 초기화
+    } finally {
+      // 로컬 상태 초기화
+      setCurrentUser(null);
+      setShowMyPage(false);
+    }
   };
 
   // 카테고리나 검색어 변경 시 첫 페이지로 이동
@@ -232,7 +242,7 @@ export default function Home() {
                 <>
                   <span className="flex items-center gap-2 text-gray-700">
                     <UserIcon className="w-4 h-4" />
-                    {currentUser.name}님
+                    {(!currentUser.name || currentUser.name.startsWith('deletedUser_') ? '탈퇴한 사용자' : currentUser.name)}님
                   </span>
                   <Button
                     variant="outline"
