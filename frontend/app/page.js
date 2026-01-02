@@ -46,7 +46,7 @@ export default function Home() {
   // 마이페이지 활동 데이터
   const [myQuestions, setMyQuestions] = useState([]);
   const [myAnswers, setMyAnswers] = useState([]);
-  const [likedQuestions, setLikedQuestions] = useState([]);
+  const [myLikedQuestions, setMyLikedQuestions] = useState([]);
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [activeTab, setActiveTab] = useState('questions');
 
@@ -125,7 +125,7 @@ export default function Home() {
 
           setMyQuestions(questionsData || []);
           setMyAnswers(answersData || []);
-          setLikedQuestions(likesData || []);
+          setMyLikedQuestions(likesData || []);
         } catch (error) {
           console.error('마이페이지 데이터를 불러오는데 실패했습니다:', error);
 
@@ -140,7 +140,7 @@ export default function Home() {
           // 기타 에러인 경우 빈 배열로 설정
           setMyQuestions([]);
           setMyAnswers([]);
-          setLikedQuestions([]);
+          setMyLikedQuestions([]);
         } finally {
           setLoadingActivity(false);
         }
@@ -218,7 +218,7 @@ export default function Home() {
           <MyPageActivityTabs
             myQuestions={myQuestions}
             myAnswers={myAnswers}
-            likedQuestions={likedQuestions}
+            likedQuestions={myLikedQuestions}
             loading={loadingActivity}
             activeTab={activeTab}
             onTabChange={setActiveTab}

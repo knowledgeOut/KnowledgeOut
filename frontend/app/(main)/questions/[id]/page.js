@@ -35,7 +35,7 @@ export default function QuestionDetailPage({ params }) {
     }, []);
 
     // 답변 등록 핸들러
-    const handleAddAnswer = async (content) => {
+    const handleAddAnswer = async (content, author, tags) => {
         if (!currentUser) {
             alert('로그인이 필요합니다.');
             return;
@@ -48,7 +48,12 @@ export default function QuestionDetailPage({ params }) {
             // 페이지 새로고침으로 답변 목록 갱신
             window.location.reload();
         } catch (err) {
-            setSubmitError(err.message);
+            // 인증 오류인 경우 구체적인 메시지 표시
+            if (err.response?.status === 401 || err.response?.status === 403) {
+                setSubmitError('로그인이 필요합니다. 다시 로그인해주세요.');
+            } else {
+                setSubmitError(err.message || '답변 등록에 실패했습니다.');
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -165,23 +170,15 @@ export default function QuestionDetailPage({ params }) {
                     </div>
 
                     {/* 답변 작성 폼 */}
-                    {currentUser ? (
-                        <div className="space-y-2">
-                            <AnswerForm 
-                                onSubmit={handleAddAnswer} 
-                                isSubmitting={isSubmitting}
-                            />
-                            {submitError && (
-                                <p className="text-sm text-red-500">{submitError}</p>
-                            )}
-                        </div>
-                    ) : (
-                        <Card>
-                            <CardContent className="py-6 text-center text-gray-500">
-                                답변을 작성하려면 로그인이 필요합니다.
-                            </CardContent>
-                        </Card>
-                    )}
+                    <div className="space-y-2">
+                        <AnswerForm 
+                            onSubmit={handleAddAnswer} 
+                            currentUser={currentUser}
+                        />
+                        {submitError && (
+                            <p className="text-sm text-red-500">{submitError}</p>
+                        )}
+                    </div>
 
                     {/* 답변 목록 안내 */}
                     {question.answerCount > 0 && (
