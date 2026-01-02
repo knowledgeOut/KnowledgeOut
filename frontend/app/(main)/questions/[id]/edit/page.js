@@ -1,5 +1,10 @@
+'use client';
+
+import { use } from 'react';
+
 export default function EditQuestionPage({ params }) {
-    const { id } = params;
+    // Next.js 15: params는 Promise이므로 use()로 unwrap
+    const { id } = use(params);
 
     return (
         <div>

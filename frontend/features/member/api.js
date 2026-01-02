@@ -42,7 +42,8 @@ export async function updateMember(data) {
     if (error.response?.status === 401 || error.response?.status === 403) {
       throw new Error('로그인이 필요합니다.');
     }
-    throw new Error(error.message || '회원 정보 수정에 실패했습니다.');
+    // axios.js에서 이미 에러 메시지를 error.message에 설정했으므로 그대로 사용
+    throw error;
   }
 }
 

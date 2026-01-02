@@ -2,26 +2,32 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, User as UserIcon } from 'lucide-react';
+import { Search, Plus, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { QuestionList } from '@/components/common/QuestionList';
-import { QuestionForm } from '@/components/common/QuestionForm';
-import { QuestionDetail } from '@/components/common/QuestionDetail';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthDialog } from '@/components/common/AuthDialog';
-import { MyPage } from '@/components/common/MyPage';
-import { getMyPage } from '@/features/member/api';
-import { getQuestions, getQuestion } from '@/features/question/api';
-import { deleteAnswer, createAnswer } from '@/features/answer/api';
+import { MyPageUserInfoSection } from '@/components/common/MyPageUserInfoSection';
+import { MyPageActivityTabs } from '@/components/common/MyPageActivityTabs';
+import { getMyPage, getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
+import { useQuestions } from '@/features/question/hooks';
+import { getCategories } from '@/features/category/api';
+import { getQuestionCounts } from '@/features/question/api';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 export default function Home() {
   const router = useRouter();
-  const [questions, setQuestions] = useState([]);
-  const [loadingQuestions, setLoadingQuestions] = useState(true);
-  const [selectedQuestionId, setSelectedQuestionId] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [selectedStatus, setSelectedStatus] = useState('전체');
@@ -31,8 +37,32 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState(null);
   const [showMyPage, setShowMyPage] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [selectedQuestionId, setSelectedQuestionId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [counts, setCounts] = useState({ totalCount: 0, pendingCount: 0, answeredCount: 0 });
+  const pageSize = 10;
 
-  // 페이지 로드 시 로그인 상태 확인 및 질문 목록 가져오기
+  // 마이페이지 활동 데이터
+  const [myQuestions, setMyQuestions] = useState([]);
+  const [myAnswers, setMyAnswers] = useState([]);
+  const [likedQuestions, setLikedQuestions] = useState([]);
+  const [loadingActivity, setLoadingActivity] = useState(false);
+  const [activeTab, setActiveTab] = useState('questions');
+
+  // API 파라미터 설정
+  const apiParams = {
+    page: currentPage,
+    size: pageSize,
+    search: searchQuery,
+    category: selectedCategory,
+    status: selectedStatus === 'pending' ? 'WAITING' : (selectedStatus === 'answered' ? 'ANSWERED' : undefined)
+  };
+
+  // 질문 목록 조회 훅 사용
+  const { questions, loading, error, pageInfo, refetch } = useQuestions(apiParams);
+
+  // 페이지 로드 시 로그인 상태 확인
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -41,10 +71,9 @@ export default function Home() {
           id: userData.id,
           email: userData.email,
           nickname: userData.nickname,
-          name: userData.nickname, // name 필드도 nickname으로 설정
+          name: userData.nickname,
         });
       } catch (error) {
-        // 로그인되지 않은 경우 무시
         setCurrentUser(null);
       } finally {
         setIsCheckingAuth(false);
@@ -54,40 +83,72 @@ export default function Home() {
     checkAuth();
   }, []);
 
-  // 질문 목록 가져오기 함수
-  const fetchQuestions = useCallback(async () => {
-    try {
-      setLoadingQuestions(true);
-      const data = await getQuestions();
-      const questionsList = Array.isArray(data) ? data : data.questions || data.content || [];
-      
-      // API 응답을 기존 형식에 맞게 변환
-      const formattedQuestions = questionsList.map((q) => ({
-        id: q.id?.toString() || String(q.id),
-        title: q.title || '',
-        content: q.content || '',
-        author: q.memberNickname || '',
-        category: q.categoryName || '',
-        createdAt: q.createdAt ? new Date(q.createdAt) : new Date(),
-        answerCount: q.answerCount || 0,
-        status: (q.answerCount || 0) > 0 ? 'answered' : 'pending',
-        likes: q.likeCount || 0,
-        answers: [], // 상세 페이지에서 가져올 예정
-      }));
-      
-      setQuestions(formattedQuestions);
-    } catch (error) {
-      console.error('질문 목록을 불러오는 중 오류가 발생했습니다:', error);
-      setQuestions([]);
-    } finally {
-      setLoadingQuestions(false);
-    }
+  // 카테고리 목록 조회
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data || []);
+      } catch (error) {
+        console.error('카테고리 조회 실패:', error);
+        setCategories([]);
+      }
+    };
+
+    fetchCategories();
   }, []);
 
-  // 질문 목록 가져오기
+  // 전체 개수 조회
   useEffect(() => {
-    fetchQuestions();
-  }, [fetchQuestions]);
+    const fetchCounts = async () => {
+      const data = await getQuestionCounts({
+        category: selectedCategory,
+        search: searchQuery
+      });
+      setCounts(data);
+    };
+
+    fetchCounts();
+  }, [selectedCategory, searchQuery]);
+
+  // 마이페이지 표시 시 활동 데이터 조회
+  useEffect(() => {
+    if (showMyPage && currentUser) {
+      const fetchActivityData = async () => {
+        try {
+          setLoadingActivity(true);
+          const [questionsData, answersData, likesData] = await Promise.all([
+            getMyQuestions(),
+            getMyAnswers(),
+            getMyQuestionLikes(),
+          ]);
+
+          setMyQuestions(questionsData || []);
+          setMyAnswers(answersData || []);
+          setLikedQuestions(likesData || []);
+        } catch (error) {
+          console.error('마이페이지 데이터를 불러오는데 실패했습니다:', error);
+
+          // 인증 에러인 경우 마이페이지를 닫고 로그인 상태 초기화
+          if (error.message?.includes('로그인') || error.response?.status === 401 || error.response?.status === 403) {
+            alert('로그인이 필요합니다. 마이페이지를 닫습니다.');
+            setShowMyPage(false);
+            setCurrentUser(null);
+            return;
+          }
+
+          // 기타 에러인 경우 빈 배열로 설정
+          setMyQuestions([]);
+          setMyAnswers([]);
+          setLikedQuestions([]);
+        } finally {
+          setLoadingActivity(false);
+        }
+      };
+
+      fetchActivityData();
+    }
+  }, [showMyPage, currentUser]);
 
   const handleLogin = (user) => {
     setCurrentUser(user);
@@ -103,152 +164,29 @@ export default function Home() {
     setLikedQuestions(new Set());
   };
 
-  const handleAddQuestion = async (newQuestion) => {
-    // 질문 작성 후 목록 새로고침
-    try {
-      await fetchQuestions();
-      setShowForm(false);
-    } catch (error) {
-      console.error('질문 목록을 새로고침하는 중 오류가 발생했습니다:', error);
-    }
-  };
-
-  const handleAddAnswer = async (questionId, content, author, tags) => {
-    try {
-      // API를 통해 답변 추가
-      await createAnswer(questionId, {
-        content: content.trim(),
-      });
-      
-      // 답변 추가 후 질문 상세 정보 새로고침
-      await refreshQuestionDetail(questionId);
-    } catch (error) {
-      alert(error.message || '답변 등록에 실패했습니다.');
-      console.error('답변 등록 중 오류가 발생했습니다:', error);
-    }
-  };
-
-  const handleDeleteAnswer = async (questionId, answerId) => {
-    try {
-      await deleteAnswer(questionId, answerId);
-      // 삭제 후 질문 상세 정보 새로고침
-      await refreshQuestionDetail(questionId);
-    } catch (error) {
-      alert(error.message || '답변 삭제에 실패했습니다.');
-      console.error('답변 삭제 중 오류가 발생했습니다:', error);
-    }
-  };
-
-  const refreshQuestionDetail = useCallback(async (questionId) => {
-    try {
-      const questionData = await getQuestion(questionId);
-      
-      // API 응답을 기존 형식에 맞게 변환
-      const formattedQuestion = {
-        id: questionData.id?.toString() || String(questionData.id),
-        title: questionData.title || '',
-        content: questionData.content || '',
-        author: questionData.memberNickname || '',
-        category: questionData.categoryName || '',
-        createdAt: questionData.createdAt ? new Date(questionData.createdAt) : new Date(),
-        answerCount: questionData.answerCount || 0,
-        status: (questionData.answerCount || 0) > 0 ? 'answered' : 'pending',
-        likes: questionData.likeCount || 0,
-        answers: (questionData.answers || []).map((a) => ({
-          id: a.id?.toString() || String(a.id),
-          content: a.content || '',
-          author: a.memberNickname || '',
-          memberId: a.memberId,
-          createdAt: a.createdAt ? new Date(a.createdAt) : new Date(),
-          tags: a.tagNames || [],
-        })),
-      };
-      
-      // 질문 목록 업데이트
-      setQuestions(prevQuestions => 
-        prevQuestions.map(q => 
-          q.id === formattedQuestion.id ? formattedQuestion : q
-        )
-      );
-      
-      // 선택된 질문도 업데이트
-      if (selectedQuestionId === formattedQuestion.id) {
-        setSelectedQuestion(formattedQuestion);
-      }
-    } catch (error) {
-      console.error('질문 상세 정보를 불러오는 중 오류가 발생했습니다:', error);
-      throw error;
-    }
-  }, [selectedQuestionId]);
-
-  const handleLike = (questionId) => {
-    const isLiked = likedQuestions.has(questionId);
-    
-    setQuestions(questions.map(q => {
-      if (q.id === questionId) {
-        return {
-          ...q,
-          likes: isLiked ? q.likes - 1 : q.likes + 1,
-        };
-      }
-      return q;
-    }));
-
-    setLikedQuestions(prev => {
-      const newSet = new Set(prev);
-      if (isLiked) {
-        newSet.delete(questionId);
-      } else {
-        newSet.add(questionId);
-      }
-      return newSet;
-    });
-  };
-
-  const filteredQuestions = questions.filter(q => {
-    const matchesSearch = q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         q.content.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === '전체' || q.category === selectedCategory;
-    const matchesStatus = selectedStatus === '전체' || q.status === selectedStatus;
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
-  const [selectedQuestion, setSelectedQuestion] = useState(null);
-  const [loadingQuestionDetail, setLoadingQuestionDetail] = useState(false);
-
-  // 질문 상세 정보 가져오기
+  // 카테고리나 검색어 변경 시 첫 페이지로 이동
   useEffect(() => {
-    if (selectedQuestionId) {
-      const loadQuestionDetail = async () => {
-        try {
-          setLoadingQuestionDetail(true);
-          await refreshQuestionDetail(selectedQuestionId);
-        } catch (error) {
-          console.error('질문 상세 정보를 불러오는 중 오류가 발생했습니다:', error);
-        } finally {
-          setLoadingQuestionDetail(false);
-        }
-      };
-      loadQuestionDetail();
-    } else {
-      setSelectedQuestion(null);
-    }
-  }, [selectedQuestionId, refreshQuestionDetail]);
+    setCurrentPage(0);
+  }, [selectedCategory, searchQuery, selectedStatus]);
 
-  // 질문 목록이 업데이트되면 선택된 질문도 업데이트
-  useEffect(() => {
-    if (selectedQuestionId) {
-      const question = questions.find(q => q.id === selectedQuestionId);
-      if (question) {
-        setSelectedQuestion(question);
-      }
-    }
-  }, [questions, selectedQuestionId]);
+  // 페이지 변경 핸들러
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  const categories = ['전체', ...Array.from(new Set(questions.map(q => q.category)))];
+  // 클라이언트 측 필터링 제거 (백엔드에서 이미 처리됨)
+  const filteredQuestions = questions;
+
+  const categoryOptions = ['전체', ...categories.map(c => c.name)];
+
+  // 질문 선택 시 상세 페이지로 이동
+  const handleSelectQuestion = (questionId) => {
+    router.push(`/questions/${questionId}`);
+  };
 
   // 인증 상태 확인 중이면 로딩 표시
-  if (isCheckingAuth || loadingQuestions) {
+  if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-gray-600">로딩 중...</div>
@@ -269,48 +207,22 @@ export default function Home() {
   if (showMyPage && currentUser) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
-          <MyPage
-            user={currentUser}
-            questions={questions}
-            likedQuestionIds={Array.from(likedQuestions)}
-            onBack={() => setShowMyPage(false)}
-            onSelectQuestion={(id) => {
-              setShowMyPage(false);
-              setSelectedQuestionId(id);
-            }}
-            onLogout={handleLogout}
-          />
-        </div>
-      </div>
-    );
-  }
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Button variant="ghost" onClick={() => setShowMyPage(false)} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            돌아가기
+          </Button>
 
-  if (selectedQuestion) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
-          <QuestionDetail
-            question={selectedQuestion}
-            onBack={() => setSelectedQuestionId(null)}
-            onAddAnswer={(content, author, tags) => handleAddAnswer(selectedQuestion.id, content, author, tags)}
-            onDeleteAnswer={(questionId, answerId) => handleDeleteAnswer(questionId, answerId)}
-            onLike={() => handleLike(selectedQuestion.id)}
-            isLiked={likedQuestions.has(selectedQuestion.id)}
-            currentUser={currentUser}
-          />
-        </div>
-      </div>
-    );
-  }
+          <MyPageUserInfoSection user={currentUser} onLogout={handleLogout} />
 
-  if (showForm) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
-          <QuestionForm
-            onSubmit={handleAddQuestion}
-            onCancel={() => setShowForm(false)}
+          <MyPageActivityTabs
+            myQuestions={myQuestions}
+            myAnswers={myAnswers}
+            likedQuestions={likedQuestions}
+            loading={loadingActivity}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onSelectQuestion={handleSelectQuestion}
           />
         </div>
       </div>
@@ -375,17 +287,28 @@ export default function Home() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               placeholder="질문 검색..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setSearchQuery(searchInput);
+                }
+              }}
               className="pl-10"
             />
           </div>
+          <Button
+            variant="secondary"
+            onClick={() => setSearchQuery(searchInput)}
+          >
+            검색
+          </Button>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-[150px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {categories.map((cat) => (
+              {categoryOptions.map((cat) => (
                 <SelectItem key={cat} value={cat}>
                   {cat}
                 </SelectItem>
@@ -418,37 +341,195 @@ export default function Home() {
           </Button>
         </div>
 
-        <Tabs defaultValue="all" className="mb-6">
-          <TabsList>
-            <TabsTrigger value="all">
-              전체 ({questions.length})
-            </TabsTrigger>
-            <TabsTrigger value="pending">
-              미답변 ({questions.filter(q => q.status === 'pending').length})
-            </TabsTrigger>
-            <TabsTrigger value="answered">
-              답변완료 ({questions.filter(q => q.status === 'answered').length})
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="all">
-            <QuestionList
-              questions={filteredQuestions}
-              onSelectQuestion={setSelectedQuestionId}
-            />
-          </TabsContent>
-          <TabsContent value="pending">
-            <QuestionList
-              questions={filteredQuestions.filter(q => q.status === 'pending')}
-              onSelectQuestion={setSelectedQuestionId}
-            />
-          </TabsContent>
-          <TabsContent value="answered">
-            <QuestionList
-              questions={filteredQuestions.filter(q => q.status === 'answered')}
-              onSelectQuestion={setSelectedQuestionId}
-            />
-          </TabsContent>
-        </Tabs>
+        {/* 에러 표시 */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        {/* 로딩 상태 */}
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">
+            질문을 불러오는 중...
+          </div>
+        ) : (
+          <Tabs value={selectedStatus} onValueChange={setSelectedStatus} className="mb-6">
+            <TabsList>
+              <TabsTrigger value="전체">
+                전체 ({counts.totalCount})
+              </TabsTrigger>
+              <TabsTrigger value="pending">
+                미답변 ({counts.pendingCount})
+              </TabsTrigger>
+              <TabsTrigger value="answered">
+                답변완료 ({counts.answeredCount})
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="전체">
+              <QuestionList
+                questions={filteredQuestions}
+                onSelectQuestion={handleSelectQuestion}
+              />
+            </TabsContent>
+            <TabsContent value="pending">
+              <QuestionList
+                questions={filteredQuestions}
+                onSelectQuestion={handleSelectQuestion}
+              />
+            </TabsContent>
+            <TabsContent value="answered">
+              <QuestionList
+                questions={filteredQuestions}
+                onSelectQuestion={handleSelectQuestion}
+              />
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {/* 페이지네이션 */}
+        {!loading && pageInfo.totalPages > 1 && (
+          <div className="mt-8">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 0) {
+                        handlePageChange(currentPage - 1);
+                      }
+                    }}
+                    className={currentPage === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+
+                {/* 페이지 번호 표시 */}
+                {(() => {
+                  const pages = [];
+                  const totalPages = pageInfo.totalPages;
+
+                  // 페이지가 7개 이하인 경우 모두 표시
+                  if (totalPages <= 7) {
+                    for (let i = 0; i < totalPages; i++) {
+                      pages.push(
+                        <PaginationItem key={i}>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handlePageChange(i);
+                            }}
+                            isActive={i === currentPage}
+                            className="cursor-pointer"
+                          >
+                            {i + 1}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    }
+                  } else {
+                    // 첫 페이지
+                    pages.push(
+                      <PaginationItem key={0}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePageChange(0);
+                          }}
+                          isActive={0 === currentPage}
+                          className="cursor-pointer"
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+
+                    // 왼쪽 ellipsis
+                    if (currentPage > 3) {
+                      pages.push(
+                        <PaginationItem key="ellipsis-left">
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      );
+                    }
+
+                    // 현재 페이지 주변 페이지들
+                    const start = Math.max(1, currentPage - 1);
+                    const end = Math.min(totalPages - 2, currentPage + 1);
+                    for (let i = start; i <= end; i++) {
+                      pages.push(
+                        <PaginationItem key={i}>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handlePageChange(i);
+                            }}
+                            isActive={i === currentPage}
+                            className="cursor-pointer"
+                          >
+                            {i + 1}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    }
+
+                    // 오른쪽 ellipsis
+                    if (currentPage < totalPages - 4) {
+                      pages.push(
+                        <PaginationItem key="ellipsis-right">
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      );
+                    }
+
+                    // 마지막 페이지
+                    pages.push(
+                      <PaginationItem key={totalPages - 1}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePageChange(totalPages - 1);
+                          }}
+                          isActive={totalPages - 1 === currentPage}
+                          className="cursor-pointer"
+                        >
+                          {totalPages}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  }
+
+                  return pages;
+                })()}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < pageInfo.totalPages - 1) {
+                        handlePageChange(currentPage + 1);
+                      }
+                    }}
+                    className={currentPage >= pageInfo.totalPages - 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
+
+        {/* 페이지 정보 표시 */}
+        {!loading && pageInfo.totalElements > 0 && (
+          <div className="text-center text-sm text-gray-500 mt-4">
+            총 {pageInfo.totalElements}개의 질문 (페이지 {currentPage + 1} / {pageInfo.totalPages})
+          </div>
+        )}
       </div>
 
       <AuthDialog

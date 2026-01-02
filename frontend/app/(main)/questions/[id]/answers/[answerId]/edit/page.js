@@ -22,10 +22,10 @@ export default function EditAnswerPage({ params }) {
             try {
                 setLoadingAnswer(true);
                 const question = await getQuestion(id);
-                
+
                 // 답변 찾기
                 const answer = question.answers?.find(a => a.id === Number(answerId));
-                
+
                 if (!answer) {
                     alert('답변을 찾을 수 없습니다.');
                     router.push(`/questions/${id}`);
@@ -47,7 +47,7 @@ export default function EditAnswerPage({ params }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!content.trim()) {
             alert('답변 내용을 입력해주세요.');
             return;
@@ -58,7 +58,7 @@ export default function EditAnswerPage({ params }) {
             await updateAnswer(id, answerId, {
                 content: content.trim(),
             });
-            
+
             // 성공 시 질문 상세 화면으로 이동
             router.push(`/questions/${id}`);
         } catch (error) {
@@ -108,9 +108,9 @@ export default function EditAnswerPage({ params }) {
                             </div>
 
                             <div className="flex gap-2 justify-end">
-                                <Button 
-                                    type="button" 
-                                    variant="outline" 
+                                <Button
+                                    type="button"
+                                    variant="outline"
                                     onClick={handleCancel}
                                     disabled={loading}
                                 >
@@ -127,3 +127,4 @@ export default function EditAnswerPage({ params }) {
         </div>
     );
 }
+
