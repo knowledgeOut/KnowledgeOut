@@ -58,7 +58,17 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
             onClose();
             router.push('/');
         } catch (error) {
-            setLoginError(error.message || '로그인에 실패했습니다.');
+            // 로그인 실패 시 적절한 메시지로 변환
+            let errorMessage = error.message || '로그인에 실패했습니다.';
+            
+            // "로그인이 필요합니다." 또는 로그인 관련 에러인 경우 메시지 변경
+            if (errorMessage.includes('로그인이 필요합니다') || 
+                errorMessage.includes('로그인') ||
+                (error.response && error.response.status === 401)) {
+                errorMessage = '이메일 또는 비밀번호를 확인해 주세요.';
+            }
+            
+            setLoginError(errorMessage);
         } finally {
             setIsLoginSubmitting(false);
         }
