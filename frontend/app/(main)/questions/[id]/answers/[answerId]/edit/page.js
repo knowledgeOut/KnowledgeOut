@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,7 @@ import { getQuestion } from '@/features/question/api';
 
 export default function EditAnswerPage({ params }) {
     const router = useRouter();
-    const { id, answerId } = params;
+    const { id, answerId } = use(params);
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(false);
     const [loadingAnswer, setLoadingAnswer] = useState(true);

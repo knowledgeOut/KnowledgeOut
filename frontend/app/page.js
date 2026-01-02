@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, User as UserIcon } from 'lucide-react';
 import { QuestionList } from '@/components/common/QuestionList';
 import { QuestionForm } from '@/components/common/QuestionForm';
@@ -13,84 +13,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthDialog } from '@/components/common/AuthDialog';
 import { MyPage } from '@/components/common/MyPage';
 import { getMyPage } from '@/features/member/api';
-
-const initialQuestions = [
-  {
-    id: '1',
-    title: 'React에서 useState와 useEffect의 차이점은 무엇인가요?',
-    content: 'React Hooks를 공부하고 있는데, useState와 useEffect의 사용 시점과 차이점이 궁금합니다. 각각 언제 사용해야 하나요?',
-    author: '김철수',
-    category: '기술',
-    createdAt: new Date('2024-12-20T10:30:00'),
-    answerCount: 2,
-    status: 'answered',
-    likes: 12,
-    answers: [
-      {
-        id: 'a1',
-        content: 'useState는 컴포넌트의 상태를 관리하는 Hook이고, useEffect는 사이드 이펙트를 처리하는 Hook입니다. useState는 상태값과 상태를 업데이트하는 함수를 반환하며, useEffect는 컴포넌트가 렌더링될 때마다 특정 작업을 수행할 수 있게 해줍니다. #React #Hooks',
-        author: '이영희',
-        createdAt: new Date('2024-12-20T11:00:00'),
-        tags: ['React', 'Hooks'],
-      },
-      {
-        id: 'a2',
-        content: '추가로 설명하자면, useEffect는 API 호출, 구독 설정, DOM 조작 등의 작업을 할 때 사용합니다. 의존성 배열을 통해 특정 값이 변경될 때만 실행되도록 제어할 수 있습니다. #React #useEffect #성능최적화',
-        author: '박민수',
-        createdAt: new Date('2024-12-20T14:20:00'),
-        tags: ['React', 'useEffect', '성능최적화'],
-      },
-    ],
-  },
-  {
-    id: '2',
-    title: '게시판 검색 기능 구현 방법',
-    content: '게시판에 검색 기능을 추가하려고 하는데, 프론트엔드에서 필터링하는 것과 백엔드에서 검색하는 것 중 어느 것이 더 나을까요?',
-    author: '정수진',
-    category: '기능',
-    createdAt: new Date('2024-12-21T09:15:00'),
-    answerCount: 1,
-    status: 'answered',
-    likes: 8,
-    answers: [
-      {
-        id: 'a3',
-        content: '데이터의 양에 따라 다릅니다. 적은 양의 데이터라면 프론트엔드에서 필터링해도 무방하지만, 대용량 데이터의 경우 백엔드에서 페이징과 함께 검색 기능을 구현하는 것이 성능상 유리합니다. #성능 #검색',
-        author: '최동욱',
-        createdAt: new Date('2024-12-21T10:30:00'),
-        tags: ['성능', '검색'],
-      },
-    ],
-  },
-  {
-    id: '3',
-    title: 'TypeScript 타입 에러 해결 방법',
-    content: 'TypeScript를 사용 중인데 "Type \'string\' is not assignable to type \'number\'" 에러가 계속 발생합니다. 어떻게 해결해야 하나요?',
-    author: '강민지',
-    category: '버그',
-    createdAt: new Date('2024-12-22T15:45:00'),
-    answerCount: 0,
-    status: 'pending',
-    likes: 3,
-    answers: [],
-  },
-  {
-    id: '4',
-    title: 'CSS Grid와 Flexbox 선택 기준',
-    content: '레이아웃을 만들 때 Grid와 Flexbox 중 어떤 것을 선택해야 할지 기준이 궁금합니다.',
-    author: '윤서영',
-    category: '기술',
-    createdAt: new Date('2024-12-23T08:20:00'),
-    answerCount: 0,
-    status: 'pending',
-    likes: 5,
-    answers: [],
-  },
-];
+import { getQuestions, getQuestion } from '@/features/question/api';
+import { deleteAnswer, createAnswer } from '@/features/answer/api';
 
 export default function Home() {
   const router = useRouter();
-  const [questions, setQuestions] = useState(initialQuestions);
+  const [questions, setQuestions] = useState([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(true);
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,7 +32,7 @@ export default function Home() {
   const [showMyPage, setShowMyPage] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // 페이지 로드 시 로그인 상태 확인
+  // 페이지 로드 시 로그인 상태 확인 및 질문 목록 가져오기
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -125,6 +54,41 @@ export default function Home() {
     checkAuth();
   }, []);
 
+  // 질문 목록 가져오기 함수
+  const fetchQuestions = useCallback(async () => {
+    try {
+      setLoadingQuestions(true);
+      const data = await getQuestions();
+      const questionsList = Array.isArray(data) ? data : data.questions || data.content || [];
+      
+      // API 응답을 기존 형식에 맞게 변환
+      const formattedQuestions = questionsList.map((q) => ({
+        id: q.id?.toString() || String(q.id),
+        title: q.title || '',
+        content: q.content || '',
+        author: q.memberNickname || '',
+        category: q.categoryName || '',
+        createdAt: q.createdAt ? new Date(q.createdAt) : new Date(),
+        answerCount: q.answerCount || 0,
+        status: (q.answerCount || 0) > 0 ? 'answered' : 'pending',
+        likes: q.likeCount || 0,
+        answers: [], // 상세 페이지에서 가져올 예정
+      }));
+      
+      setQuestions(formattedQuestions);
+    } catch (error) {
+      console.error('질문 목록을 불러오는 중 오류가 발생했습니다:', error);
+      setQuestions([]);
+    } finally {
+      setLoadingQuestions(false);
+    }
+  }, []);
+
+  // 질문 목록 가져오기
+  useEffect(() => {
+    fetchQuestions();
+  }, [fetchQuestions]);
+
   const handleLogin = (user) => {
     setCurrentUser(user);
   };
@@ -139,40 +103,83 @@ export default function Home() {
     setLikedQuestions(new Set());
   };
 
-  const handleAddQuestion = (newQuestion) => {
-    const question = {
-      id: Date.now().toString(),
-      ...newQuestion,
-      createdAt: new Date(),
-      answerCount: 0,
-      status: 'pending',
-      answers: [],
-      likes: 0,
-    };
-    setQuestions([question, ...questions]);
-    setShowForm(false);
+  const handleAddQuestion = async (newQuestion) => {
+    // 질문 작성 후 목록 새로고침
+    try {
+      await fetchQuestions();
+      setShowForm(false);
+    } catch (error) {
+      console.error('질문 목록을 새로고침하는 중 오류가 발생했습니다:', error);
+    }
   };
 
-  const handleAddAnswer = (questionId, content, author, tags) => {
-    setQuestions(questions.map(q => {
-      if (q.id === questionId) {
-        const newAnswer = {
-          id: Date.now().toString(),
-          content,
-          author,
-          createdAt: new Date(),
-          tags,
-        };
-        return {
-          ...q,
-          answers: [...q.answers, newAnswer],
-          answerCount: q.answers.length + 1,
-          status: 'answered',
-        };
-      }
-      return q;
-    }));
+  const handleAddAnswer = async (questionId, content, author, tags) => {
+    try {
+      // API를 통해 답변 추가
+      await createAnswer(questionId, {
+        content: content.trim(),
+      });
+      
+      // 답변 추가 후 질문 상세 정보 새로고침
+      await refreshQuestionDetail(questionId);
+    } catch (error) {
+      alert(error.message || '답변 등록에 실패했습니다.');
+      console.error('답변 등록 중 오류가 발생했습니다:', error);
+    }
   };
+
+  const handleDeleteAnswer = async (questionId, answerId) => {
+    try {
+      await deleteAnswer(questionId, answerId);
+      // 삭제 후 질문 상세 정보 새로고침
+      await refreshQuestionDetail(questionId);
+    } catch (error) {
+      alert(error.message || '답변 삭제에 실패했습니다.');
+      console.error('답변 삭제 중 오류가 발생했습니다:', error);
+    }
+  };
+
+  const refreshQuestionDetail = useCallback(async (questionId) => {
+    try {
+      const questionData = await getQuestion(questionId);
+      
+      // API 응답을 기존 형식에 맞게 변환
+      const formattedQuestion = {
+        id: questionData.id?.toString() || String(questionData.id),
+        title: questionData.title || '',
+        content: questionData.content || '',
+        author: questionData.memberNickname || '',
+        category: questionData.categoryName || '',
+        createdAt: questionData.createdAt ? new Date(questionData.createdAt) : new Date(),
+        answerCount: questionData.answerCount || 0,
+        status: (questionData.answerCount || 0) > 0 ? 'answered' : 'pending',
+        likes: questionData.likeCount || 0,
+        answers: (questionData.answers || []).map((a) => ({
+          id: a.id?.toString() || String(a.id),
+          content: a.content || '',
+          author: a.memberNickname || '',
+          memberId: a.memberId,
+          createdAt: a.createdAt ? new Date(a.createdAt) : new Date(),
+          tags: a.tagNames || [],
+        })),
+      };
+      
+      // 질문 목록 업데이트
+      setQuestions(prevQuestions => 
+        prevQuestions.map(q => 
+          q.id === formattedQuestion.id ? formattedQuestion : q
+        )
+      );
+      
+      // 선택된 질문도 업데이트
+      if (selectedQuestionId === formattedQuestion.id) {
+        setSelectedQuestion(formattedQuestion);
+      }
+    } catch (error) {
+      console.error('질문 상세 정보를 불러오는 중 오류가 발생했습니다:', error);
+      throw error;
+    }
+  }, [selectedQuestionId]);
 
   const handleLike = (questionId) => {
     const isLiked = likedQuestions.has(questionId);
@@ -206,17 +213,54 @@ export default function Home() {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const selectedQuestion = selectedQuestionId
-    ? questions.find(q => q.id === selectedQuestionId)
-    : null;
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [loadingQuestionDetail, setLoadingQuestionDetail] = useState(false);
+
+  // 질문 상세 정보 가져오기
+  useEffect(() => {
+    if (selectedQuestionId) {
+      const loadQuestionDetail = async () => {
+        try {
+          setLoadingQuestionDetail(true);
+          await refreshQuestionDetail(selectedQuestionId);
+        } catch (error) {
+          console.error('질문 상세 정보를 불러오는 중 오류가 발생했습니다:', error);
+        } finally {
+          setLoadingQuestionDetail(false);
+        }
+      };
+      loadQuestionDetail();
+    } else {
+      setSelectedQuestion(null);
+    }
+  }, [selectedQuestionId, refreshQuestionDetail]);
+
+  // 질문 목록이 업데이트되면 선택된 질문도 업데이트
+  useEffect(() => {
+    if (selectedQuestionId) {
+      const question = questions.find(q => q.id === selectedQuestionId);
+      if (question) {
+        setSelectedQuestion(question);
+      }
+    }
+  }, [questions, selectedQuestionId]);
 
   const categories = ['전체', ...Array.from(new Set(questions.map(q => q.category)))];
 
   // 인증 상태 확인 중이면 로딩 표시
-  if (isCheckingAuth) {
+  if (isCheckingAuth || loadingQuestions) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-gray-600">로딩 중...</div>
+      </div>
+    );
+  }
+
+  // 질문 상세 정보 로딩 중
+  if (selectedQuestionId && loadingQuestionDetail && !selectedQuestion) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">질문 정보를 불러오는 중...</div>
       </div>
     );
   }
@@ -250,8 +294,10 @@ export default function Home() {
             question={selectedQuestion}
             onBack={() => setSelectedQuestionId(null)}
             onAddAnswer={(content, author, tags) => handleAddAnswer(selectedQuestion.id, content, author, tags)}
+            onDeleteAnswer={(questionId, answerId) => handleDeleteAnswer(questionId, answerId)}
             onLike={() => handleLike(selectedQuestion.id)}
             isLiked={likedQuestions.has(selectedQuestion.id)}
+            currentUser={currentUser}
           />
         </div>
       </div>

@@ -9,11 +9,13 @@ import {Textarea} from "../ui/textarea";
 import {Badge} from "../ui/badge";
 import {Button} from "../ui/button";
 
-export function AnswerForm({ onSubmit }) {
+export function AnswerForm({ onSubmit, currentUser }) {
     const [content, setContent] = useState('');
-    const [author, setAuthor] = useState('');
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState([]);
+
+    // author는 currentUser에서 직접 계산
+    const author = currentUser?.nickname || currentUser?.name || '';
 
     const extractTagsFromContent = (text) => {
         const tagRegex = /#(\S+)/g;
@@ -36,7 +38,7 @@ export function AnswerForm({ onSubmit }) {
         if (content.trim() && author.trim()) {
             onSubmit(content, author, tags);
             setContent('');
-            setAuthor('');
+            // author는 currentUser에서 자동으로 설정되므로 초기화하지 않음
             setTags([]);
             setTagInput('');
         }
@@ -61,10 +63,16 @@ export function AnswerForm({ onSubmit }) {
                         <Input
                             id="answer-author"
                             value={author}
-                            onChange={(e) => setAuthor(e.target.value)}
-                            placeholder="이름을 입력하세요"
+                            disabled
+                            placeholder={currentUser ? currentUser.nickname || currentUser.name : "로그인이 필요합니다"}
+                            className="bg-gray-100 cursor-not-allowed"
                             required
                         />
+                        {!currentUser && (
+                            <p className="text-xs text-red-500 mt-1">
+                                답변을 작성하려면 로그인이 필요합니다.
+                            </p>
+                        )}
                     </div>
 
                     <div>
@@ -103,7 +111,7 @@ export function AnswerForm({ onSubmit }) {
                     )}
 
                     <div className="flex justify-end">
-                        <Button type="submit">
+                        <Button type="submit" disabled={!currentUser || !author.trim()}>
                             답변 등록
                         </Button>
                     </div>
