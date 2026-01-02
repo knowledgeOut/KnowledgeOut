@@ -27,7 +27,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    // 1. [필수] 비밀번호 암호화 빈 (회원가입 서비스에서 사용)
     private final CustomUserDetailsService userDetailsService;
 
     @Bean
@@ -46,47 +45,50 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                // 1. CSRF 비활성화 (중복 제거)
+                .csrf(AbstractHttpConfigurer::disable)
+
                 // 2. CORS 설정 적용
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 3. CSRF 비활성화 (REST API이므로)
-                .csrf(AbstractHttpConfigurer::disable)
-
-                // 4. [중요] 세션 관리 정책을 STATELESS로 설정
-                // (Next.js와 JWT를 사용할 것이므로 세션을 서버에 저장하지 않음)
+                // 3. 세션 관리 정책
                 .sessionManagement(session ->
                         // session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                         // JWT 필터 구현시 해당 코드 지우고 STATELESS로 테스트 진행 필요
                         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
-                // 5. URL 권한 설정
+                // 4. URL 권한 설정
                 .authorizeHttpRequests(auth -> auth
-                        // 공개 접근 가능한 경로 (순서 중요: 구체적인 경로를 먼저)
+                        // (1) 공개 경로
                         .requestMatchers("/api/knowledgeout/members/signup", "/api/knowledgeout/members/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/knowledgeout", "/api/knowledgeout/questions/**", "/api/knowledgeout/categories").permitAll()
-                        
-                        // 관리자 전용 경로
+
+                        // (2) 관리자 경로
+                        // 주의: DB 권한이 'ROLE_ADMIN'이면 hasRole("ADMIN")
+                        // DB 권한이 그냥 'ADMIN'이면 hasAuthority("ADMIN") 사용
                         .requestMatchers("/api/knowledgeout/admin/**").hasRole("ADMIN")
-                        
-                        // 마이페이지 관련 경로는 인증 필요
+
+                        // (3) 회원 전용 경로
                         .requestMatchers(
                                 "/api/knowledgeout/members/mypage",
                                 "/api/knowledgeout/members/mypage/**",
-                                "/api/knowledgeout/members/{id}"
+                                "/api/knowledgeout/members/{id}" // 본인 확인 로직은 Service나 Controller에서 추가 검증 필요
                         ).authenticated()
 
-                        // 그 외 모든 요청은 인증 필요
+                        // (4) 그 외 나머지
                         .anyRequest().authenticated()
                 )
-                // 인증 실패 시 401/403 에러 반환 (기본 동작)
+
+                // 5. 예외 처리 (인증되지 않은 사용자 -> 401)
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(403);
+                            response.setStatus(401); // 403 -> 401로 변경 (Unauthorized)
                             response.setContentType("application/json;charset=UTF-8");
-                            response.getWriter().write("{\"error\":\"인증이 필요합니다.\"}");
+                            response.getWriter().write("{\"error\":\"로그인이 필요합니다.\"}");
                         })
                 )
+
+                // 6. 로그아웃 설정
                 .logout(logout -> logout
                         .logoutUrl("/api/knowledgeout/members/logout")
                         .logoutSuccessHandler((request, response, authentication) -> {
@@ -99,31 +101,20 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 6. CORS 구체적 설정 (통합)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-        // 허용할 프론트엔드 도메인 (3000, 3001 둘 다 허용)
+        // 중복 제거 및 통합된 설정
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
                 "http://localhost:3001"
         ));
-
-        // 허용할 HTTP 메서드 (PATCH 포함)
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
-
-        // 모든 헤더 허용
         configuration.setAllowedHeaders(List.of("*"));
-
-        // 인증 정보(쿠키/토큰) 포함 허용
         configuration.setAllowCredentials(true);
-
-        // Preflight 요청 캐시 시간 (1시간)
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
