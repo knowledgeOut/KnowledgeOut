@@ -2,14 +2,14 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, MessageCircle, Eye } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Eye, Tag, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { AnswerForm } from '@/components/common/AnswerForm';
 import { useQuestion } from '@/features/question/hooks';
-import { createAnswer } from '@/features/answer/api';
+import { getAnswers, createAnswer, deleteAnswer } from '@/features/answer/api';
 import { getMyPage } from '@/features/member/api';
 
 export default function QuestionDetailPage({ params }) {
@@ -20,6 +20,8 @@ export default function QuestionDetailPage({ params }) {
     const [currentUser, setCurrentUser] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState(null);
+    const [answers, setAnswers] = useState([]);
+    const [loadingAnswers, setLoadingAnswers] = useState(false);
 
     // 로그인 상태 확인
     useEffect(() => {
@@ -34,6 +36,24 @@ export default function QuestionDetailPage({ params }) {
         checkAuth();
     }, []);
 
+    // 답변 목록 조회
+    useEffect(() => {
+        const fetchAnswers = async () => {
+            if (!id) return;
+            try {
+                setLoadingAnswers(true);
+                const answersData = await getAnswers(id);
+                setAnswers(answersData || []);
+            } catch (error) {
+                console.error('답변 목록 조회 실패:', error);
+                setAnswers([]);
+            } finally {
+                setLoadingAnswers(false);
+            }
+        };
+        fetchAnswers();
+    }, [id]);
+
     // 답변 등록 핸들러
     const handleAddAnswer = async (content, author, tags) => {
         if (!currentUser) {
@@ -45,7 +65,10 @@ export default function QuestionDetailPage({ params }) {
             setIsSubmitting(true);
             setSubmitError(null);
             await createAnswer(id, { content });
-            // 페이지 새로고침으로 답변 목록 갱신
+            // 답변 목록 새로고침
+            const answersData = await getAnswers(id);
+            setAnswers(answersData || []);
+            // 질문 정보도 다시 불러와서 answerCount 업데이트
             window.location.reload();
         } catch (err) {
             // 인증 오류인 경우 구체적인 메시지 표시
@@ -56,6 +79,29 @@ export default function QuestionDetailPage({ params }) {
             }
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    // 답변 삭제 핸들러
+    const handleDeleteAnswer = async (questionId, answerId) => {
+        if (!currentUser) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        if (!confirm('정말 이 답변을 삭제하시겠습니까?')) {
+            return;
+        }
+
+        try {
+            await deleteAnswer(questionId, answerId);
+            // 답변 목록 새로고침
+            const answersData = await getAnswers(id);
+            setAnswers(answersData || []);
+            // 질문 정보도 다시 불러와서 answerCount 업데이트
+            window.location.reload();
+        } catch (err) {
+            alert(err.message || '답변 삭제에 실패했습니다.');
         }
     };
 
@@ -180,11 +226,76 @@ export default function QuestionDetailPage({ params }) {
                         )}
                     </div>
 
-                    {/* 답변 목록 안내 */}
-                    {question.answerCount > 0 && (
+                    {/* 답변 목록 */}
+                    {loadingAnswers ? (
+                        <div className="text-center py-6 text-gray-500">
+                            답변을 불러오는 중...
+                        </div>
+                    ) : answers.length > 0 ? (
+                        <div className="space-y-4">
+                            {answers.map((answer) => {
+                                // 현재 사용자가 작성한 답변인지 확인
+                                const isMyAnswer = currentUser && (
+                                    answer.memberId === currentUser.id ||
+                                    answer.memberId?.toString() === currentUser.id?.toString() ||
+                                    answer.memberNickname === currentUser.nickname ||
+                                    answer.author === currentUser.nickname ||
+                                    answer.author === currentUser.name
+                                );
+
+                                return (
+                                    <Card key={answer.id}>
+                                        <CardContent className="pt-6">
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                                                        <span>{answer.memberNickname || answer.author}</span>
+                                                        <span>{new Date(answer.createdAt).toLocaleString('ko-KR')}</span>
+                                                    </div>
+                                                    {isMyAnswer && (
+                                                        <div className="flex items-center gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => router.push(`/questions/${id}/answers/${answer.id}/edit`)}
+                                                                className="h-8 px-2 text-gray-600 hover:text-gray-900"
+                                                            >
+                                                                <Edit className="w-4 h-4 mr-1" />
+                                                                수정
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleDeleteAnswer(id, answer.id)}
+                                                                className="h-8 px-2 text-red-600 hover:text-red-700"
+                                                            >
+                                                                <Trash2 className="w-4 h-4 mr-1" />
+                                                                삭제
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="whitespace-pre-wrap">{answer.content}</div>
+                                                {answer.tags && answer.tags.length > 0 && (
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <Tag className="w-4 h-4 text-gray-400" />
+                                                        {answer.tags.map((tag, index) => (
+                                                            <Badge key={index} variant="secondary" className="gap-1">
+                                                                #{tag}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    ) : (
                         <Card>
                             <CardContent className="py-6 text-center text-gray-500">
-                                답변 {question.answerCount}개가 등록되어 있습니다.
+                                등록된 답변이 없습니다.
                             </CardContent>
                         </Card>
                     )}

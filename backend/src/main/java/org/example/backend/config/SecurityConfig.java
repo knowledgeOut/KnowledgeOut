@@ -64,7 +64,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 공개 접근 가능한 경로 (순서 중요: 구체적인 경로를 먼저)
                         .requestMatchers("/api/knowledgeout/members/signup", "/api/knowledgeout/members/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/knowledgeout", "/api/knowledgeout/questions/**", "/api/knowledgeout/categories").permitAll()
+                        // GET 요청 허용: 질문 목록, 질문 상세, 질문의 답변 목록, 카테고리
+                        .requestMatchers(HttpMethod.GET, 
+                                "/api/knowledgeout", 
+                                "/api/knowledgeout/questions/**", 
+                                "/api/knowledgeout/categories").permitAll()
                         
                         // 관리자 전용 경로
                         .requestMatchers("/api/knowledgeout/admin/**").hasRole("ADMIN")

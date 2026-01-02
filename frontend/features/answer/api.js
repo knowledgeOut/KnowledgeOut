@@ -5,6 +5,20 @@
 import apiClient from '../../lib/axios';
 
 /**
+ * 답변 목록 조회
+ * @param {string|number} questionId - 질문 ID
+ * @returns {Promise<Array>} 답변 목록
+ */
+export async function getAnswers(questionId) {
+  try {
+    const response = await apiClient.get(`/questions/${questionId}/answers`);
+    return response;
+  } catch (error) {
+    throw new Error(error.message || '답변 목록을 불러올 수 없습니다.');
+  }
+}
+
+/**
  * 답변 등록
  * @param {string|number} questionId - 질문 ID
  * @param {Object} data - { content }
