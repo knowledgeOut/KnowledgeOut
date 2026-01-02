@@ -235,12 +235,10 @@ export default function QuestionDetailPage({ params }) {
                         <div className="space-y-4">
                             {answers.map((answer) => {
                                 // 현재 사용자가 작성한 답변인지 확인
-                                const isMyAnswer = currentUser && (
-                                    answer.memberId === currentUser.id ||
-                                    answer.memberId?.toString() === currentUser.id?.toString() ||
-                                    answer.memberNickname === currentUser.nickname ||
-                                    answer.author === currentUser.nickname ||
-                                    answer.author === currentUser.name
+                                // memberId와 currentUser.id를 비교 (타입 변환 고려)
+                                const isMyAnswer = currentUser && currentUser.id && answer.memberId && (
+                                    Number(answer.memberId) === Number(currentUser.id) ||
+                                    String(answer.memberId) === String(currentUser.id)
                                 );
 
                                 return (
@@ -249,7 +247,7 @@ export default function QuestionDetailPage({ params }) {
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-4 text-sm text-gray-500">
-                                                        <span>{answer.memberNickname || answer.author}</span>
+                                                        <span>{answer.memberNickname || '익명'}</span>
                                                         <span>{new Date(answer.createdAt).toLocaleString('ko-KR')}</span>
                                                     </div>
                                                     {isMyAnswer && (
