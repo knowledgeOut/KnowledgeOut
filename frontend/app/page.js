@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Search, Plus, User as UserIcon } from 'lucide-react';
+import { Search, Plus, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { QuestionList } from '@/components/common/QuestionList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -184,11 +184,10 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center justify-end">
-            <Button variant="outline" onClick={() => setShowMyPage(false)}>
-              돌아가기
-            </Button>
-          </div>
+          <Button variant="ghost" onClick={() => setShowMyPage(false)} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            돌아가기
+          </Button>
 
           <MyPageUserInfoSection user={currentUser} onLogout={handleLogout} />
 
