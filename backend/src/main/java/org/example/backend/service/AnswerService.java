@@ -33,7 +33,7 @@ public class AnswerService {
     }
 
     public List<AnswerResponseDto> getAnswersByQuestionId(Long questionId) {
-        List<Answer> answers = answerRepository.findByQuestionIdOrderByCreatedAtAsc(questionId);
+        List<Answer> answers = answerRepository.findByQuestionIdAndStatusFalseOrderByCreatedAtAsc(questionId);
         return answers.stream()
                 .map(AnswerResponseDto::fromEntity)
                 .collect(Collectors.toList());
@@ -42,7 +42,7 @@ public class AnswerService {
     @Transactional
     public void updateAnswer(String userEmail, Long questionId, Long answerId, AnswerRequestDto request) {
         Member member = memberRepository.findByEmail(userEmail).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
-        Answer answer = answerRepository.findById(answerId)
+        Answer answer = answerRepository.findByIdAndStatusFalse(answerId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 답변입니다."));
         
         // 질문 ID 검증
@@ -61,7 +61,7 @@ public class AnswerService {
     @Transactional
     public void deleteAnswer(String userEmail, Long questionId, Long answerId) {
         Member member = memberRepository.findByEmail(userEmail).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
-        Answer answer = answerRepository.findById(answerId)
+        Answer answer = answerRepository.findByIdAndStatusFalse(answerId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 답변입니다."));
         
         // 질문 ID 검증
@@ -74,6 +74,7 @@ public class AnswerService {
             throw new IllegalArgumentException("답변을 삭제할 권한이 없습니다.");
         }
         
-        answerRepository.delete(answer);
+        // soft delete 수행
+        answer.delete();
     }
 }

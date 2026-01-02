@@ -31,8 +31,9 @@ public class QuestionResponseDto {
     private List<AnswerResponseDto> answers; // 답변 목록
 
     public static QuestionResponseDto fromEntity(Question question) {
-        // 답변 목록을 생성일시 기준 오름차순으로 정렬하여 변환
+        // 답변 목록을 생성일시 기준 오름차순으로 정렬하여 변환 (soft delete 필터링)
         List<AnswerResponseDto> answers = question.getAnswers().stream()
+                .filter(org.example.backend.domain.answer.Answer::isNotDeleted) // 삭제되지 않은 답변만
                 .sorted(Comparator.comparing(org.example.backend.domain.answer.Answer::getCreatedAt))
                 .map(AnswerResponseDto::fromEntity)
                 .collect(Collectors.toList());
@@ -42,7 +43,7 @@ public class QuestionResponseDto {
                 question.getTitle(),
                 question.getContent(),
                 question.getViewCount(),
-                question.getAnswers().size(), // [추가] 답변 리스트 크기
+                answers.size(), // 삭제되지 않은 답변 개수
                 question.getCreatedAt(),
                 question.getModifiedAt(),
                 // Member 정보
