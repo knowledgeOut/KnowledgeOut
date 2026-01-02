@@ -2,14 +2,15 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, MessageCircle, Eye, Tag, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Eye, Tag, Edit, Trash2, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 import { AnswerForm } from '@/components/common/AnswerForm';
 import { useQuestion } from '@/features/question/hooks';
-import { getAnswers, createAnswer, deleteAnswer } from '@/features/answer/api';
+import { getAnswers, createAnswer, deleteAnswer, updateAnswer } from '@/features/answer/api';
 import { getMyPage } from '@/features/member/api';
 
 export default function QuestionDetailPage({ params }) {
@@ -22,6 +23,9 @@ export default function QuestionDetailPage({ params }) {
     const [submitError, setSubmitError] = useState(null);
     const [answers, setAnswers] = useState([]);
     const [loadingAnswers, setLoadingAnswers] = useState(false);
+    const [editingAnswerId, setEditingAnswerId] = useState(null);
+    const [editingContent, setEditingContent] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
 
     // 로그인 상태 확인
     useEffect(() => {
@@ -79,6 +83,42 @@ export default function QuestionDetailPage({ params }) {
             }
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    // 답변 수정 시작 핸들러
+    const handleStartEdit = (answer) => {
+        setEditingAnswerId(answer.id);
+        setEditingContent(answer.content || '');
+    };
+
+    // 답변 수정 취소 핸들러
+    const handleCancelEdit = () => {
+        setEditingAnswerId(null);
+        setEditingContent('');
+    };
+
+    // 답변 수정 저장 핸들러
+    const handleSaveEdit = async (questionId, answerId) => {
+        if (!editingContent.trim()) {
+            alert('답변 내용을 입력해주세요.');
+            return;
+        }
+
+        try {
+            setIsUpdating(true);
+            await updateAnswer(questionId, answerId, { content: editingContent.trim() });
+            // 답변 목록 새로고침
+            const answersData = await getAnswers(id);
+            setAnswers(answersData || []);
+            // 질문 정보도 다시 불러와서 answerCount 업데이트
+            window.location.reload();
+            setEditingAnswerId(null);
+            setEditingContent('');
+        } catch (err) {
+            alert(err.message || '답변 수정에 실패했습니다.');
+        } finally {
+            setIsUpdating(false);
         }
     };
 
@@ -240,6 +280,7 @@ export default function QuestionDetailPage({ params }) {
                                     Number(answer.memberId) === Number(currentUser.id) ||
                                     String(answer.memberId) === String(currentUser.id)
                                 );
+                                const isEditing = editingAnswerId === answer.id;
 
                                 return (
                                     <Card key={answer.id}>
@@ -250,12 +291,12 @@ export default function QuestionDetailPage({ params }) {
                                                         <span>{answer.memberNickname || '익명'}</span>
                                                         <span>{new Date(answer.createdAt).toLocaleString('ko-KR')}</span>
                                                     </div>
-                                                    {isMyAnswer && (
+                                                    {isMyAnswer && !isEditing && (
                                                         <div className="flex items-center gap-2">
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                onClick={() => router.push(`/questions/${id}/answers/${answer.id}/edit`)}
+                                                                onClick={() => handleStartEdit(answer)}
                                                                 className="h-8 px-2 text-gray-600 hover:text-gray-900"
                                                             >
                                                                 <Edit className="w-4 h-4 mr-1" />
@@ -273,16 +314,52 @@ export default function QuestionDetailPage({ params }) {
                                                         </div>
                                                     )}
                                                 </div>
-                                                <div className="whitespace-pre-wrap">{answer.content}</div>
-                                                {answer.tags && answer.tags.length > 0 && (
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <Tag className="w-4 h-4 text-gray-400" />
-                                                        {answer.tags.map((tag, index) => (
-                                                            <Badge key={index} variant="secondary" className="gap-1">
-                                                                #{tag}
-                                                            </Badge>
-                                                        ))}
+                                                
+                                                {isEditing ? (
+                                                    <div className="space-y-3">
+                                                        <Textarea
+                                                            value={editingContent}
+                                                            onChange={(e) => setEditingContent(e.target.value)}
+                                                            placeholder="답변 내용을 작성해주세요"
+                                                            rows={6}
+                                                            className="w-full"
+                                                        />
+                                                        <div className="flex items-center gap-2 justify-end">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={handleCancelEdit}
+                                                                disabled={isUpdating}
+                                                                className="h-8 px-3"
+                                                            >
+                                                                <X className="w-4 h-4 mr-1" />
+                                                                취소
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={() => handleSaveEdit(id, answer.id)}
+                                                                disabled={isUpdating || !editingContent.trim()}
+                                                                className="h-8 px-3"
+                                                            >
+                                                                <Check className="w-4 h-4 mr-1" />
+                                                                {isUpdating ? '저장 중...' : '저장'}
+                                                            </Button>
+                                                        </div>
                                                     </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="whitespace-pre-wrap">{answer.content}</div>
+                                                        {answer.tags && answer.tags.length > 0 && (
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <Tag className="w-4 h-4 text-gray-400" />
+                                                                {answer.tags.map((tag, index) => (
+                                                                    <Badge key={index} variant="secondary" className="gap-1">
+                                                                        #{tag}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         </CardContent>
