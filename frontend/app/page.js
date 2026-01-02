@@ -127,6 +127,19 @@ export default function Home() {
           setLikedQuestions(likesData || []);
         } catch (error) {
           console.error('마이페이지 데이터를 불러오는데 실패했습니다:', error);
+          
+          // 인증 에러인 경우 마이페이지를 닫고 로그인 상태 초기화
+          if (error.message?.includes('로그인') || error.response?.status === 401 || error.response?.status === 403) {
+            alert('로그인이 필요합니다. 마이페이지를 닫습니다.');
+            setShowMyPage(false);
+            setCurrentUser(null);
+            return;
+          }
+          
+          // 기타 에러인 경우 빈 배열로 설정
+          setMyQuestions([]);
+          setMyAnswers([]);
+          setLikedQuestions([]);
         } finally {
           setLoadingActivity(false);
         }

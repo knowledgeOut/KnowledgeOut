@@ -20,6 +20,7 @@ export function MyPageUserInfoSection({ user, onLogout }) {
         confirmPassword: '',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [passwordError, setPasswordError] = useState('');
 
     // 사용자 정보가 변경되면 폼 초기화
     useEffect(() => {
@@ -28,6 +29,7 @@ export function MyPageUserInfoSection({ user, onLogout }) {
             password: '',
             confirmPassword: '',
         });
+        setPasswordError('');
     }, [user]);
 
     const handleSubmit = async () => {
@@ -51,12 +53,12 @@ export function MyPageUserInfoSection({ user, onLogout }) {
 
         if (passwordChanged) {
             if (editForm.password.length < 8) {
-                alert('비밀번호는 8자 이상이어야 합니다.');
+                setPasswordError('비밀번호는 8자 이상이어야 합니다.');
                 return;
             }
 
             if (editForm.password !== editForm.confirmPassword) {
-                alert('비밀번호가 일치하지 않습니다.');
+                setPasswordError('비밀번호가 일치하지 않습니다.');
                 return;
             }
         }
@@ -81,6 +83,7 @@ export function MyPageUserInfoSection({ user, onLogout }) {
             
             alert('회원 정보가 수정되었습니다.');
             setIsEditDialogOpen(false);
+            setPasswordError('');
             
             // 비밀번호가 변경된 경우 로그아웃
             if (passwordChanged) {
@@ -93,7 +96,18 @@ export function MyPageUserInfoSection({ user, onLogout }) {
                 window.location.reload();
             }
         } catch (error) {
-            alert(error.message || '회원 정보 수정에 실패했습니다.');
+            // 비밀번호 변경 시도 시 발생한 에러인 경우 비밀번호 입력창에 표시
+            if (passwordChanged && (error.message?.includes('비밀번호') || error.message?.includes('동일한'))) {
+                setPasswordError(error.message);
+                // 에러 발생 시 비밀번호 입력창 비우기
+                setEditForm({
+                    ...editForm,
+                    password: '',
+                    confirmPassword: '',
+                });
+            } else {
+                alert(error.message || '회원 정보 수정에 실패했습니다.');
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -106,6 +120,7 @@ export function MyPageUserInfoSection({ user, onLogout }) {
             password: '',
             confirmPassword: '',
         });
+        setPasswordError('');
     };
 
     return (
@@ -157,11 +172,19 @@ export function MyPageUserInfoSection({ user, onLogout }) {
                                         id="edit-password"
                                         type="password"
                                         value={editForm.password}
-                                        onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                                        onChange={(e) => {
+                                            setEditForm({ ...editForm, password: e.target.value });
+                                            setPasswordError('');
+                                        }}
                                         placeholder="비밀번호를 변경하지 않으려면 비워두세요"
                                         minLength={8}
+                                        className={passwordError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                                     />
-                                    <p className="text-xs text-gray-500">비밀번호는 8자 이상이어야 합니다.</p>
+                                    {passwordError ? (
+                                        <p className="text-xs text-red-500">{passwordError}</p>
+                                    ) : (
+                                        <p className="text-xs text-gray-500">비밀번호는 8자 이상이어야 합니다.</p>
+                                    )}
                                 </div>
                                 {editForm.password && (
                                     <div className="space-y-2">
@@ -170,8 +193,12 @@ export function MyPageUserInfoSection({ user, onLogout }) {
                                             id="edit-confirm-password"
                                             type="password"
                                             value={editForm.confirmPassword}
-                                            onChange={(e) => setEditForm({ ...editForm, confirmPassword: e.target.value })}
+                                            onChange={(e) => {
+                                                setEditForm({ ...editForm, confirmPassword: e.target.value });
+                                                setPasswordError('');
+                                            }}
                                             placeholder="비밀번호를 다시 입력하세요"
+                                            className={passwordError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                                         />
                                     </div>
                                 )}

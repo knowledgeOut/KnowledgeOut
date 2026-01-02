@@ -59,6 +59,10 @@ public class MemberService {
             if (request.getPassword().length() < 8) {
                 throw new IllegalArgumentException("비밀번호는 8자 이상이어야 합니다.");
             }
+            // 현재 비밀번호와 동일한지 확인
+            if (passwordEncoder.matches(request.getPassword(), member.getPassword())) {
+                throw new IllegalArgumentException("현재 비밀번호와 동일한 비밀번호로는 변경할 수 없습니다.");
+            }
             // 비밀번호 암호화
             String encodedPassword = passwordEncoder.encode(request.getPassword());
             member.updatePassword(encodedPassword);
