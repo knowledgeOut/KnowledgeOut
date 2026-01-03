@@ -129,25 +129,28 @@ export default function AdminDashboardPage() {
           {/* 최근 인기 태그 */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">🔥 누적 인기 태그 (Top 5)</h2>
-            <ul className="list-disc list-inside">
+            
+            {/* [수정] ul -> ol, list-disc -> list-decimal 로 변경 */}
+            <ol className="list-decimal list-inside space-y-2"> 
               {dashboardData.topTags.map((tag, index) => (
                 <li key={index} className="text-lg text-gray-700">
-                  {tag}
+                  <span className="font-medium">{tag}</span>
                 </li>
               ))}
-            </ul>
+            </ol>
           </div>
 
           {/* 최근 인기 카테고리 */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">📂 누적 인기 카테고리 (Top 5)</h2>
-            <ul className="list-disc list-inside">
+            
+            <ol className="list-decimal list-inside space-y-2">
               {dashboardData.topCategories.map((category, index) => (
                 <li key={index} className="text-lg text-gray-700">
-                  {category}
+                  <span className="font-medium">{category}</span>
                 </li>
               ))}
-            </ul>
+            </ol>
           </div>
         </div>
 
