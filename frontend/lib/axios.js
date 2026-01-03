@@ -149,7 +149,7 @@ export const apiClient = {
           errorMessage = await response.text() || errorMessage;
         }
       } catch (e) {
-        // 파싱 실패 시 상태 코드 기반 메시지
+        // JSON 파싱 실패 시 상태 코드 기반 메시지
         if (response.status === 400) {
           errorMessage = '잘못된 요청입니다.';
         } else if (response.status === 409) {
@@ -163,7 +163,35 @@ export const apiClient = {
       throw error;
     }
 
-    return response.json();
+    // 성공 응답 처리 - JSON 또는 빈 응답
+    const contentType = response.headers.get('content-type');
+    const contentLength = response.headers.get('content-length');
+
+    // 응답 본문이 없는 경우 (Void 응답)
+    if (contentLength === '0') {
+      return { success: true };
+    }
+
+    // 응답 본문 읽기 (한 번만 읽을 수 있음)
+    const text = await response.text();
+
+    // 빈 응답인 경우
+    if (!text || !text.trim()) {
+      return { success: true };
+    }
+
+    // JSON 응답인 경우
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        return JSON.parse(text);
+      } catch {
+        // JSON 파싱 실패 시 텍스트 반환
+        return text;
+      }
+    }
+
+    // 텍스트 응답인 경우
+    return text;
   },
 
   /**

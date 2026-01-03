@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, User as UserIcon, ArrowLeft, LayoutDashboard } from 'lucide-react';
 import { QuestionList } from '@/components/common/QuestionList';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,7 @@ export default function Home() {
   const [selectedStatus, setSelectedStatus] = useState('전체');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authDialogTab, setAuthDialogTab] = useState('login');
+  const [likedQuestions, setLikedQuestions] = useState(new Set());
   const [currentUser, setCurrentUser] = useState(null);
   const [showMyPage, setShowMyPage] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -41,11 +42,11 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(0);
   const [counts, setCounts] = useState({ totalCount: 0, pendingCount: 0, answeredCount: 0 });
   const pageSize = 10;
-  
+
   // 마이페이지 활동 데이터
   const [myQuestions, setMyQuestions] = useState([]);
   const [myAnswers, setMyAnswers] = useState([]);
-  const [likedQuestions, setLikedQuestions] = useState([]);
+  const [myLikedQuestions, setMyLikedQuestions] = useState([]);
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [activeTab, setActiveTab] = useState('questions');
 
@@ -122,13 +123,13 @@ export default function Home() {
             getMyAnswers(),
             getMyQuestionLikes(),
           ]);
-          
+
           setMyQuestions(questionsData || []);
           setMyAnswers(answersData || []);
-          setLikedQuestions(likesData || []);
+          setMyLikedQuestions(likesData || []);
         } catch (error) {
           console.error('마이페이지 데이터를 불러오는데 실패했습니다:', error);
-          
+
           // 인증 에러인 경우 마이페이지를 닫고 로그인 상태 초기화
           if (error.message?.includes('로그인') || error.response?.status === 401 || error.response?.status === 403) {
             alert('로그인이 필요합니다. 마이페이지를 닫습니다.');
@@ -136,11 +137,11 @@ export default function Home() {
             setCurrentUser(null);
             return;
           }
-          
+
           // 기타 에러인 경우 빈 배열로 설정
           setMyQuestions([]);
           setMyAnswers([]);
-          setLikedQuestions([]);
+          setMyLikedQuestions([]);
         } finally {
           setLoadingActivity(false);
         }
@@ -170,6 +171,7 @@ export default function Home() {
       // 로컬 상태 초기화
       setCurrentUser(null);
       setShowMyPage(false);
+      setLikedQuestions(new Set());
     }
   };
 
@@ -203,6 +205,15 @@ export default function Home() {
     );
   }
 
+  // 질문 상세 정보 로딩 중
+  if (selectedQuestionId && loadingQuestionDetail && !selectedQuestion) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">질문 정보를 불러오는 중...</div>
+      </div>
+    );
+  }
+
   // 마이페이지 표시
   if (showMyPage && currentUser) {
     return (
@@ -218,7 +229,7 @@ export default function Home() {
           <MyPageActivityTabs
             myQuestions={myQuestions}
             myAnswers={myAnswers}
-            likedQuestions={likedQuestions}
+            likedQuestions={myLikedQuestions}
             loading={loadingActivity}
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -267,7 +278,7 @@ export default function Home() {
                 </>
               ) : (
                 <>
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => {
                       setAuthDialogTab('login');
@@ -307,8 +318,8 @@ export default function Home() {
               className="pl-10"
             />
           </div>
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={() => setSearchQuery(searchInput)}
           >
             검색
@@ -419,7 +430,7 @@ export default function Home() {
                 {(() => {
                   const pages = [];
                   const totalPages = pageInfo.totalPages;
-                  
+
                   // 페이지가 7개 이하인 경우 모두 표시
                   if (totalPages <= 7) {
                     for (let i = 0; i < totalPages; i++) {
@@ -456,7 +467,7 @@ export default function Home() {
                         </PaginationLink>
                       </PaginationItem>
                     );
-                    
+
                     // 왼쪽 ellipsis
                     if (currentPage > 3) {
                       pages.push(
@@ -465,7 +476,7 @@ export default function Home() {
                         </PaginationItem>
                       );
                     }
-                    
+
                     // 현재 페이지 주변 페이지들
                     const start = Math.max(1, currentPage - 1);
                     const end = Math.min(totalPages - 2, currentPage + 1);
@@ -486,7 +497,7 @@ export default function Home() {
                         </PaginationItem>
                       );
                     }
-                    
+
                     // 오른쪽 ellipsis
                     if (currentPage < totalPages - 4) {
                       pages.push(
@@ -495,7 +506,7 @@ export default function Home() {
                         </PaginationItem>
                       );
                     }
-                    
+
                     // 마지막 페이지
                     pages.push(
                       <PaginationItem key={totalPages - 1}>
@@ -513,7 +524,7 @@ export default function Home() {
                       </PaginationItem>
                     );
                   }
-                  
+
                   return pages;
                 })()}
 

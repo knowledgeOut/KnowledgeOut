@@ -27,6 +27,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    // 1. [필수] 비밀번호 암호화 빈 (회원가입 서비스에서 사용)
     private final CustomUserDetailsService userDetailsService;
 
     @Bean
