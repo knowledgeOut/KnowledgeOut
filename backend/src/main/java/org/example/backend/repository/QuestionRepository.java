@@ -1,6 +1,7 @@
 package org.example.backend.repository;
 
 import org.example.backend.domain.question.Question;
+import org.example.backend.dto.response.ItemCountDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -35,21 +36,21 @@ public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSp
 
     // --- [추가된 통계 기능] ---
 
-    // 5. 인기 태그 Top N (이름 반환)
+    // 5. 인기 태그 Top N (이름 반환 + 개 수 반환)
     // 경로: Question -> QuestionTag -> Tag -> name
-    @Query("SELECT t.name FROM Question q " +
+    @Query("SELECT new org.example.backend.dto.response.ItemCountDto(t.name, COUNT(q)) FROM Question q " +
             "JOIN q.questionTags qt " +
             "JOIN qt.tag t " +
             "GROUP BY t.name " +
-            "ORDER BY COUNT(q) DESC")
-    List<String> findTopTags(Pageable pageable);
+            "ORDER BY COUNT(q) DESC, t.name ASC")
+    List<ItemCountDto> findTopTags(Pageable pageable);
 
-    // 6. 인기 카테고리 Top N (이름 반환)
-    @Query("SELECT c.name FROM Question q " +
+    // 6. 인기 카테고리 Top N (이름 반환 + 개수 반환)
+    @Query("SELECT new org.example.backend.dto.response.ItemCountDto(c.name, COUNT(q)) FROM Question q " +
             "JOIN q.category c " +
             "GROUP BY c.name " +
-            "ORDER BY COUNT(q) DESC")
-    List<String> findTopCategories(Pageable pageable);
+            "ORDER BY COUNT(q) DESC, c.name ASC")
+    List<ItemCountDto> findTopCategories(Pageable pageable);
 
     // 7. 카테고리별 질문 수 통계
     @Query("SELECT c.name, COUNT(q) FROM Question q " +

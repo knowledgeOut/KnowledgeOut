@@ -129,12 +129,12 @@ export default function AdminDashboardPage() {
           {/* 최근 인기 태그 */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">🔥 누적 인기 태그 (Top 5)</h2>
-            
-            {/* [수정] ul -> ol, list-disc -> list-decimal 로 변경 */}
-            <ol className="list-decimal list-inside space-y-2"> 
-              {dashboardData.topTags.map((tag, index) => (
+            {/* ol: 순서 있는 목록 (1., 2., 3...) */}
+            <ol className="list-decimal list-inside space-y-2">
+              {dashboardData.topTags.map((item, index) => (
                 <li key={index} className="text-lg text-gray-700">
-                  <span className="font-medium">{tag}</span>
+                  <span className="font-bold mr-2">{item.name}</span>
+                  <span className="text-gray-500 text-sm">({item.count}회)</span>
                 </li>
               ))}
             </ol>
@@ -143,11 +143,11 @@ export default function AdminDashboardPage() {
           {/* 최근 인기 카테고리 */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">📂 누적 인기 카테고리 (Top 5)</h2>
-            
             <ol className="list-decimal list-inside space-y-2">
-              {dashboardData.topCategories.map((category, index) => (
+              {dashboardData.topCategories.map((item, index) => (
                 <li key={index} className="text-lg text-gray-700">
-                  <span className="font-medium">{category}</span>
+                  <span className="font-bold mr-2">{item.name}</span>
+                  <span className="text-gray-500 text-sm">({item.count}회)</span>
                 </li>
               ))}
             </ol>

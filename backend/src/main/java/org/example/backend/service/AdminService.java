@@ -2,6 +2,7 @@ package org.example.backend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.backend.dto.response.AdminDashboardDto;
+import org.example.backend.dto.response.ItemCountDto;
 import org.example.backend.repository.CategoryRepository;
 import org.example.backend.repository.QuestionRepository;
 import org.example.backend.repository.TagRepository;
@@ -30,10 +31,10 @@ public class AdminService {
         Pageable limit10 = PageRequest.of(0, 10);
 
         // 1. 인기 태그 Top 5 (이름 리스트 반환)
-        List<String> topTags = questionRepository.findTopTags(limit5);
+        List<ItemCountDto> topTags = questionRepository.findTopTags(limit5);
 
         // 2. 인기 카테고리 Top 5 (이름 리스트 반환)
-        List<String> topCategories = questionRepository.findTopCategories(limit5);
+        List<ItemCountDto> topCategories = questionRepository.findTopCategories(limit5);
 
         // 3. 카테고리별 질문 수 (List<Object[]> -> Map<String, Long> 변환)
         List<Object[]> categoryRawData = questionRepository.countQuestionsByCategoryRaw();

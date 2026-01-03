@@ -11,8 +11,8 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdminDashboardDto {
-    private List<String> topTags;
-    private List<String> topCategories;
+    private List<ItemCountDto> topTags;
+    private List<ItemCountDto> topCategories;
     private Map<String, Long> categoryCount;
     private Map<String, Long> tagCount;
 }
