@@ -91,4 +91,16 @@ public class MemberService {
                 .map(like -> QuestionResponseDto.fromEntity(like.getQuestion()))
                 .toList();
     }
+
+    @Transactional
+    public void withdraw(Long id) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+
+        if (!member.isActive()) {
+            throw new IllegalArgumentException("이미 탈퇴 처리된 회원입니다.");
+        }
+
+        member.withdraw();
+    }
 }

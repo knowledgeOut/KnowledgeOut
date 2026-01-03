@@ -3,25 +3,65 @@ package org.example.backend.repository;
 import org.example.backend.domain.question.Question;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification; // 추가
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor; // 추가
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-// JpaSpecificationExecutor<Question> 상속 추가
 public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSpecificationExecutor<Question> {
 
-    // 페이징 조회 (기존 메서드 유지)
+    // --- [기존 기능] ---
+
+    // 1. 기본 페이징 조회 (JpaRepository 기본 제공이지만 명시적으로 선언해도 무방함)
     Page<Question> findAll(Pageable pageable);
 
-    // 조회수 증가
-    @Modifying
+    // 2. 검색 조건(Specification)을 이용한 페이징 조회는 JpaSpecificationExecutor가 자동으로 처리하므로
+    // 별도 메서드 선언 없이 service에서 repository.findAll(spec, pageable)로 호출 가능합니다.
+
+    // 3. 조회수 증가 (벌크 연산)
+    // clearAutomatically = true 옵션을 추가하면, 업데이트 후 영속성 컨텍스트를 비워
+    // 이후 조회 시 DB의 최신 값을 가져오도록 보장해줍니다. (추천)
+    @Modifying(clearAutomatically = true)
     @Query("update Question q set q.viewCount = q.viewCount + 1 where q.id = :id")
     void updateViewCount(@Param("id") Long id);
 
-    List<Question>  findByMemberIdOrderByCreatedAtDesc(Long memberId);
+    // 4. 특정 회원이 작성한 질문 목록 (최신순)
+    List<Question> findByMemberIdOrderByCreatedAtDesc(Long memberId);
+
+
+    // --- [추가된 통계 기능] ---
+
+    // 5. 인기 태그 Top N (이름 반환)
+    // 경로: Question -> QuestionTag -> Tag -> name
+    @Query("SELECT t.name FROM Question q " +
+            "JOIN q.questionTags qt " +
+            "JOIN qt.tag t " +
+            "GROUP BY t.name " +
+            "ORDER BY COUNT(q) DESC")
+    List<String> findTopTags(Pageable pageable);
+
+    // 6. 인기 카테고리 Top N (이름 반환)
+    @Query("SELECT c.name FROM Question q " +
+            "JOIN q.category c " +
+            "GROUP BY c.name " +
+            "ORDER BY COUNT(q) DESC")
+    List<String> findTopCategories(Pageable pageable);
+
+    // 7. 카테고리별 질문 수 통계
+    @Query("SELECT c.name, COUNT(q) FROM Question q " +
+            "JOIN q.category c " +
+            "GROUP BY c.name")
+    List<Object[]> countQuestionsByCategoryRaw();
+
+    // 8. 태그별 질문 수 통계
+    @Query("SELECT t.name, COUNT(q) FROM Question q " +
+            "JOIN q.questionTags qt " +
+            "JOIN qt.tag t " +
+            "GROUP BY t.name " +
+            "ORDER BY COUNT(q) DESC")
+    List<Object[]> countQuestionsByTagRaw(Pageable pageable);
 }

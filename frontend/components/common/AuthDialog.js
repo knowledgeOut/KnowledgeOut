@@ -43,6 +43,7 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
                         email: userData.email,
                         nickname: userData.nickname,
                         name: userData.nickname, // name 필드도 nickname으로 설정
+                        role: userData.role, // 관리자 권한 확인을 위해 role 추가
                     });
                 }
             } catch (userError) {
@@ -57,7 +58,17 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
             onClose();
             router.push('/');
         } catch (error) {
-            setLoginError(error.message || '로그인에 실패했습니다.');
+            // 로그인 실패 시 적절한 메시지로 변환
+            let errorMessage = error.message || '로그인에 실패했습니다.';
+            
+            // "로그인이 필요합니다." 또는 로그인 관련 에러인 경우 메시지 변경
+            if (errorMessage.includes('로그인이 필요합니다') || 
+                errorMessage.includes('로그인') ||
+                (error.response && error.response.status === 401)) {
+                errorMessage = '이메일 또는 비밀번호를 확인해 주세요.';
+            }
+            
+            setLoginError(errorMessage);
         } finally {
             setIsLoginSubmitting(false);
         }
@@ -81,22 +92,58 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
         setIsSubmitting(true);
 
         try {
+            // 회원가입 요청
             await signup({
                 email: signupEmail,
                 password: signupPassword,
                 nickname: signupNickname,
             });
             
-            // 회원가입 성공
-            if (onSignup) {
-                onSignup({ email: signupEmail, nickname: signupNickname });
+            // 회원가입 성공 후 자동 로그인하여 사용자 정보 가져오기
+            try {
+                await login({
+                    email: signupEmail,
+                    password: signupPassword,
+                });
+                
+                // 로그인 성공 후 사용자 정보 가져오기
+                try {
+                    const userData = await getMyPage();
+                    if (onSignup) {
+                        onSignup({
+                            id: userData.id,
+                            email: userData.email,
+                            nickname: userData.nickname,
+                            name: userData.nickname, // name 필드도 nickname으로 설정
+                            role: userData.role, // 관리자 권한 확인을 위해 role 추가
+                        });
+                    }
+                } catch (userError) {
+                    // 사용자 정보 가져오기 실패 시 기본 정보만 전달
+                    if (onSignup) {
+                        onSignup({ 
+                            email: signupEmail, 
+                            nickname: signupNickname 
+                        });
+                    }
+                }
+            } catch (loginError) {
+                // 자동 로그인 실패 시 회원가입 정보만 전달
+                if (onSignup) {
+                    onSignup({ 
+                        email: signupEmail, 
+                        nickname: signupNickname 
+                    });
+                }
             }
+            
             setSignupEmail('');
             setSignupPassword('');
             setSignupNickname('');
             setSignupConfirmPassword('');
             onClose();
             alert('회원가입이 완료되었습니다!');
+            router.push('/');
         } catch (error) {
             setSignupError(error.message || '회원가입에 실패했습니다.');
         } finally {
