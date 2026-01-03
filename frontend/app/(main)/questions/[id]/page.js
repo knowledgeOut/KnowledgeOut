@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, MessageCircle, Eye } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Eye, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { AnswerForm } from '@/components/common/AnswerForm';
 import { useQuestion } from '@/features/question/hooks';
 import { createAnswer } from '@/features/answer/api';
+import { deleteQuestion } from '@/features/question/api';
 import { getMyPage } from '@/features/member/api';
 
 export default function QuestionDetailPage({ params }) {
@@ -54,10 +55,33 @@ export default function QuestionDetailPage({ params }) {
         }
     };
 
+    // 질문 수정 핸들러
+    const handleEdit = () => {
+        router.push(`/questions/${id}/edit`);
+    };
+
+    // 질문 삭제 핸들러
+    const handleDelete = async () => {
+        if (!confirm('정말 이 질문을 삭제하시겠습니까?')) {
+            return;
+        }
+
+        try {
+            await deleteQuestion(id);
+            alert('질문이 삭제되었습니다.');
+            router.push('/');
+        } catch (err) {
+            alert(err.message || '질문 삭제에 실패했습니다.');
+        }
+    };
+
     // 목록으로 돌아가기
     const handleBack = () => {
         router.push('/');
     };
+
+    // 현재 사용자가 질문 작성자인지 확인
+    const isAuthor = currentUser && question && currentUser.id === question.memberId;
 
     // 로딩 상태
     if (loading) {
@@ -153,6 +177,29 @@ export default function QuestionDetailPage({ params }) {
                             <div className="whitespace-pre-wrap min-h-[100px]">
                                 {question.content}
                             </div>
+                            {/* 수정/삭제 버튼 (작성자만 보임) */}
+                            {isAuthor && (
+                                <div className="flex justify-end gap-2 pt-4 border-t">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleEdit}
+                                        className="gap-2"
+                                    >
+                                        <Edit className="w-4 h-4" />
+                                        수정
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleDelete}
+                                        className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        삭제
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
