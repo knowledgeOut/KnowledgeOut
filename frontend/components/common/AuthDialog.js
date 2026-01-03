@@ -1,264 +1,281 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { signup, login } from '../../features/auth/api';
-import { getMyPage } from '../../features/member/api';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { signup, login } from "../../features/auth/api";
+import { getMyPage } from "../../features/member/api";
+import { useRouter } from "next/navigation";
 
-export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSignup }) {
-    const router = useRouter();
-    const [loginEmail, setLoginEmail] = useState('');
-    const [loginPassword, setLoginPassword] = useState('');
-    const [signupEmail, setSignupEmail] = useState('');
-    const [signupPassword, setSignupPassword] = useState('');
-    const [signupNickname, setSignupNickname] = useState('');
-    const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
-    const [signupError, setSignupError] = useState('');
-    const [loginError, setLoginError] = useState('');
+export function AuthDialog({
+  open,
+  onClose,
+  defaultTab = "login",
+  onLogin,
+  onSignup,
+}) {
+  const router = useRouter();
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupNickname, setSignupNickname] = useState("");
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
+  const [signupError, setSignupError] = useState("");
+  const [loginError, setLoginError] = useState("");
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        setLoginError('');
-        setIsLoginSubmitting(true);
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    setIsLoginSubmitting(true);
 
+    try {
+      await login({
+        email: loginEmail,
+        password: loginPassword,
+      });
+
+      // 로그인 성공 후 사용자 정보 가져오기 (Spring Security 세션 기반)
+      try {
+        const userData = await getMyPage();
+        if (onLogin) {
+          onLogin({
+            id: userData.id,
+            email: userData.email,
+            nickname: userData.nickname,
+            name: userData.nickname, // name 필드도 nickname으로 설정
+            role: userData.role, // 관리자 권한 확인을 위해 role 추가
+          });
+        }
+      } catch (userError) {
+        // 사용자 정보 가져오기 실패 시 이메일만 전달
+        if (onLogin) {
+          onLogin({ email: loginEmail });
+        }
+      }
+
+      setLoginEmail("");
+      setLoginPassword("");
+      onClose();
+      router.push("/");
+    } catch (error) {
+      // 로그인 실패 시 적절한 메시지로 변환
+      let errorMessage = error.message || "로그인에 실패했습니다.";
+
+      // "로그인이 필요합니다." 또는 로그인 관련 에러인 경우 메시지 변경
+      if (
+        errorMessage.includes("로그인이 필요합니다") ||
+        errorMessage.includes("로그인") ||
+        (error.response && error.response.status === 401)
+      ) {
+        errorMessage = "이메일 또는 비밀번호를 확인해 주세요.";
+      }
+
+      setLoginError(errorMessage);
+    } finally {
+      setIsLoginSubmitting(false);
+    }
+  };
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setSignupError("");
+
+    // 비밀번호 길이 검증
+    if (signupPassword.length < 8) {
+      setSignupError("비밀번호는 8자 이상이어야 합니다.");
+      return;
+    }
+
+    if (signupPassword !== signupConfirmPassword) {
+      setSignupError("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // 회원가입 요청
+      await signup({
+        email: signupEmail,
+        password: signupPassword,
+        nickname: signupNickname,
+      });
+
+      // 회원가입 성공 후 자동 로그인하여 사용자 정보 가져오기
+      try {
+        await login({
+          email: signupEmail,
+          password: signupPassword,
+        });
+
+        // 로그인 성공 후 사용자 정보 가져오기
         try {
-            await login({
-                email: loginEmail,
-                password: loginPassword,
+          const userData = await getMyPage();
+          if (onSignup) {
+            onSignup({
+              id: userData.id,
+              email: userData.email,
+              nickname: userData.nickname,
+              name: userData.nickname, // name 필드도 nickname으로 설정
+              role: userData.role, // 관리자 권한 확인을 위해 role 추가
             });
-            
-            // 로그인 성공 후 사용자 정보 가져오기 (Spring Security 세션 기반)
-            try {
-                const userData = await getMyPage();
-                if (onLogin) {
-                    onLogin({
-                        id: userData.id,
-                        email: userData.email,
-                        nickname: userData.nickname,
-                        name: userData.nickname, // name 필드도 nickname으로 설정
-                        role: userData.role, // 관리자 권한 확인을 위해 role 추가
-                    });
-                }
-            } catch (userError) {
-                // 사용자 정보 가져오기 실패 시 이메일만 전달
-                if (onLogin) {
-                    onLogin({ email: loginEmail });
-                }
-            }
-            
-            setLoginEmail('');
-            setLoginPassword('');
-            onClose();
-            router.push('/');
-        } catch (error) {
-            // 로그인 실패 시 적절한 메시지로 변환
-            let errorMessage = error.message || '로그인에 실패했습니다.';
-            
-            // "로그인이 필요합니다." 또는 로그인 관련 에러인 경우 메시지 변경
-            if (errorMessage.includes('로그인이 필요합니다') || 
-                errorMessage.includes('로그인') ||
-                (error.response && error.response.status === 401)) {
-                errorMessage = '이메일 또는 비밀번호를 확인해 주세요.';
-            }
-            
-            setLoginError(errorMessage);
-        } finally {
-            setIsLoginSubmitting(false);
-        }
-    };
-
-    const handleSignup = async (e) => {
-        e.preventDefault();
-        setSignupError('');
-        
-        // 비밀번호 길이 검증
-        if (signupPassword.length < 8) {
-            setSignupError('비밀번호는 8자 이상이어야 합니다.');
-            return;
-        }
-        
-        if (signupPassword !== signupConfirmPassword) {
-            setSignupError('비밀번호가 일치하지 않습니다.');
-            return;
-        }
-
-        setIsSubmitting(true);
-
-        try {
-            // 회원가입 요청
-            await signup({
-                email: signupEmail,
-                password: signupPassword,
-                nickname: signupNickname,
+          }
+        } catch (userError) {
+          // 사용자 정보 가져오기 실패 시 기본 정보만 전달
+          if (onSignup) {
+            onSignup({
+              email: signupEmail,
+              nickname: signupNickname,
             });
-            
-            // 회원가입 성공 후 자동 로그인하여 사용자 정보 가져오기
-            try {
-                await login({
-                    email: signupEmail,
-                    password: signupPassword,
-                });
-                
-                // 로그인 성공 후 사용자 정보 가져오기
-                try {
-                    const userData = await getMyPage();
-                    if (onSignup) {
-                        onSignup({
-                            id: userData.id,
-                            email: userData.email,
-                            nickname: userData.nickname,
-                            name: userData.nickname, // name 필드도 nickname으로 설정
-                            role: userData.role, // 관리자 권한 확인을 위해 role 추가
-                        });
-                    }
-                } catch (userError) {
-                    // 사용자 정보 가져오기 실패 시 기본 정보만 전달
-                    if (onSignup) {
-                        onSignup({ 
-                            email: signupEmail, 
-                            nickname: signupNickname 
-                        });
-                    }
-                }
-            } catch (loginError) {
-                // 자동 로그인 실패 시 회원가입 정보만 전달
-                if (onSignup) {
-                    onSignup({ 
-                        email: signupEmail, 
-                        nickname: signupNickname 
-                    });
-                }
-            }
-            
-            setSignupEmail('');
-            setSignupPassword('');
-            setSignupNickname('');
-            setSignupConfirmPassword('');
-            onClose();
-            alert('회원가입이 완료되었습니다!');
-            router.push('/');
-        } catch (error) {
-            setSignupError(error.message || '회원가입에 실패했습니다.');
-        } finally {
-            setIsSubmitting(false);
+          }
         }
-    };
+      } catch (loginError) {
+        // 자동 로그인 실패 시 회원가입 정보만 전달
+        if (onSignup) {
+          onSignup({
+            email: signupEmail,
+            nickname: signupNickname,
+          });
+        }
+      }
 
-    return (
-        <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>계정</DialogTitle>
-                    <DialogDescription>
-                        로그인하거나 새 계정을 만들어보세요.
-                    </DialogDescription>
-                </DialogHeader>
-                <Tabs defaultValue={defaultTab}>
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="login">로그인</TabsTrigger>
-                        <TabsTrigger value="signup">회원가입</TabsTrigger>
-                    </TabsList>
+      setSignupEmail("");
+      setSignupPassword("");
+      setSignupNickname("");
+      setSignupConfirmPassword("");
+      onClose();
+      alert("회원가입이 완료되었습니다!");
+      router.push("/");
+    } catch (error) {
+      setSignupError(error.message || "회원가입에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-                    <TabsContent value="login">
-                        <form onSubmit={handleLogin} className="space-y-4 pt-4">
-                            {loginError && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-                                    {loginError}
-                                </div>
-                            )}
-                            <div>
-                                <Label htmlFor="login-email">이메일</Label>
-                                <Input
-                                    id="login-email"
-                                    type="email"
-                                    value={loginEmail}
-                                    onChange={(e) => setLoginEmail(e.target.value)}
-                                    placeholder="example@email.com"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="login-password">비밀번호</Label>
-                                <Input
-                                    id="login-password"
-                                    type="password"
-                                    value={loginPassword}
-                                    onChange={(e) => setLoginPassword(e.target.value)}
-                                    placeholder="비밀번호"
-                                    required
-                                />
-                            </div>
-                            <Button type="submit" className="w-full" disabled={isLoginSubmitting}>
-                                {isLoginSubmitting ? '로그인 중...' : '로그인'}
-                            </Button>
-                        </form>
-                    </TabsContent>
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>계정</DialogTitle>
+          <DialogDescription>
+            로그인하거나 새 계정을 만들어보세요.
+          </DialogDescription>
+        </DialogHeader>
+        <Tabs defaultValue={defaultTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login">로그인</TabsTrigger>
+            <TabsTrigger value="signup">회원가입</TabsTrigger>
+          </TabsList>
 
-                    <TabsContent value="signup">
-                        <form onSubmit={handleSignup} className="space-y-4 pt-4">
-                            {signupError && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-                                    {signupError}
-                                </div>
-                            )}
-                            <div>
-                                <Label htmlFor="signup-nickname">닉네임</Label>
-                                <Input
-                                    id="signup-nickname"
-                                    value={signupNickname}
-                                    onChange={(e) => setSignupNickname(e.target.value)}
-                                    placeholder="닉네임을 입력하세요"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="signup-email">이메일</Label>
-                                <Input
-                                    id="signup-email"
-                                    type="email"
-                                    value={signupEmail}
-                                    onChange={(e) => setSignupEmail(e.target.value)}
-                                    placeholder="example@email.com"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="signup-password">비밀번호</Label>
-                                <Input
-                                    id="signup-password"
-                                    type="password"
-                                    value={signupPassword}
-                                    onChange={(e) => setSignupPassword(e.target.value)}
-                                    placeholder="8자 이상 입력하세요"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="signup-confirm-password">비밀번호 확인</Label>
-                                <Input
-                                    id="signup-confirm-password"
-                                    type="password"
-                                    value={signupConfirmPassword}
-                                    onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                                    placeholder="비밀번호 확인"
-                                    required
-                                />
-                            </div>
-                            <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                {isSubmitting ? '가입 중...' : '회원가입'}
-                            </Button>
-                        </form>
-                    </TabsContent>
-                </Tabs>
-            </DialogContent>
-        </Dialog>
-    );
+          <TabsContent value="login">
+            <form onSubmit={handleLogin} className="space-y-4 pt-4">
+              {loginError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                  {loginError}
+                </div>
+              )}
+              <div>
+                <Label htmlFor="login-email">이메일</Label>
+                <Input
+                  id="login-email"
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="example@email.com"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="login-password">비밀번호</Label>
+                <Input
+                  id="login-password"
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="비밀번호"
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoginSubmitting}
+              >
+                {isLoginSubmitting ? "로그인 중..." : "로그인"}
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="signup">
+            <form onSubmit={handleSignup} className="space-y-4 pt-4">
+              {signupError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                  {signupError}
+                </div>
+              )}
+              <div>
+                <Label htmlFor="signup-nickname">닉네임</Label>
+                <Input
+                  id="signup-nickname"
+                  value={signupNickname}
+                  onChange={(e) => setSignupNickname(e.target.value)}
+                  placeholder="닉네임을 입력하세요"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="signup-email">이메일</Label>
+                <Input
+                  id="signup-email"
+                  type="email"
+                  value={signupEmail}
+                  onChange={(e) => setSignupEmail(e.target.value)}
+                  placeholder="example@email.com"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="signup-password">비밀번호</Label>
+                <Input
+                  id="signup-password"
+                  type="password"
+                  value={signupPassword}
+                  onChange={(e) => setSignupPassword(e.target.value)}
+                  placeholder="8자 이상 입력하세요"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="signup-confirm-password">비밀번호 확인</Label>
+                <Input
+                  id="signup-confirm-password"
+                  type="password"
+                  value={signupConfirmPassword}
+                  onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                  placeholder="비밀번호 확인"
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "가입 중..." : "회원가입"}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
 }
-
