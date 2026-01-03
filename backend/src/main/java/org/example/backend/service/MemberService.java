@@ -79,7 +79,7 @@ public class MemberService {
     }
 
     public List<MyAnswerResponseDto> getMyAnswers(Long memberId) {
-        return answerRepository.findByMemberIdOrderByCreatedAtDesc(memberId)
+        return answerRepository.findByMemberIdAndStatusFalseOrderByCreatedAtDesc(memberId)
                 .stream()
                 .map(MyAnswerResponseDto::fromEntity)
                 .toList();

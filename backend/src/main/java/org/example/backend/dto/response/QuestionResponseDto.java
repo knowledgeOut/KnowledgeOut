@@ -5,6 +5,7 @@ import lombok.Getter;
 import org.example.backend.domain.question.Question;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,15 +26,24 @@ public class QuestionResponseDto {
     private Long categoryId;
     private String categoryName;   
 
-    private List<String> tagNames; 
+    private List<String> tagNames;
+    
+    private List<AnswerResponseDto> answers; // 답변 목록
 
     public static QuestionResponseDto fromEntity(Question question) {
+        // 답변 목록을 생성일시 기준 오름차순으로 정렬하여 변환 (soft delete 필터링)
+        List<AnswerResponseDto> answers = question.getAnswers().stream()
+                .filter(org.example.backend.domain.answer.Answer::isNotDeleted) // 삭제되지 않은 답변만
+                .sorted(Comparator.comparing(org.example.backend.domain.answer.Answer::getCreatedAt))
+                .map(AnswerResponseDto::fromEntity)
+                .collect(Collectors.toList());
+        
         return new QuestionResponseDto(
                 question.getId(),
                 question.getTitle(),
                 question.getContent(),
                 question.getViewCount(),
-                question.getAnswers().size(), // [추가] 답변 리스트 크기
+                answers.size(), // 삭제되지 않은 답변 개수
                 question.getCreatedAt(),
                 question.getModifiedAt(),
                 // Member 정보
@@ -45,7 +55,9 @@ public class QuestionResponseDto {
                 // Tag 정보
                 question.getQuestionTags().stream()
                         .map(qt -> qt.getTag().getName())
-                        .collect(Collectors.toList())
+                        .collect(Collectors.toList()),
+                // 답변 목록
+                answers
         );
     }
 }

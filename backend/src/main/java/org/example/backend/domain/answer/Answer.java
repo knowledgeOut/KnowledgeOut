@@ -10,8 +10,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Getter
@@ -43,10 +41,29 @@ public class Answer {
     @Column(name = "modified_at")
     private LocalDateTime modifiedAt;
 
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean status = false;
+
     // 생성자 및 편의 메서드는 필요 시 추가
     public Answer(String content, Question question, Member member) {
         this.content = content;
         this.question = question;
         this.member = member;
+        this.status = false;
+    }
+
+    // 답변 수정 메서드
+    public void update(String content) {
+        this.content = content;
+    }
+
+    // 답변 삭제 메서드 (soft delete)
+    public void delete() {
+        this.status = true;
+    }
+
+    // 삭제되지 않은 답변인지 확인
+    public boolean isNotDeleted() {
+        return !this.status;
     }
 }
