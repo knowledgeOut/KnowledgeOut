@@ -52,7 +52,8 @@ public class QuestionController {
     // 질문 상세 조회
     @GetMapping("/{id}")
     public ResponseEntity<QuestionResponseDto> getQuestion(@PathVariable Long id) {
-        return ResponseEntity.ok(questionService.getQuestion(id));
+        QuestionResponseDto responseDto = questionService.getQuestion(id);
+        return ResponseEntity.ok(responseDto);
     }
 
     @PutMapping("/{id}")
