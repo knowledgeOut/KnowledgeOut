@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, User as UserIcon, ArrowLeft, LayoutDashboard } from 'lucide-react';
 import { QuestionList } from '@/components/common/QuestionList';
 import { Button } from '@/components/ui/button';
@@ -255,7 +255,6 @@ export default function Home() {
                   <span className="flex items-center gap-2 text-gray-700">
                     <UserIcon className="w-4 h-4" />
                     {(!currentUser.name || currentUser.name.startsWith('deletedUser_') ? '탈퇴한 사용자' : currentUser.name)}님
-                      {/*{currentUser.name}님*/}
                   </span>
                   <Button
                     variant="outline"
