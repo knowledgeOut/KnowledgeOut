@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSpecificationExecutor<Question> {
@@ -41,16 +42,18 @@ public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSp
     @Query("SELECT new org.example.backend.dto.response.ItemCountDto(t.name, COUNT(q)) FROM Question q " +
             "JOIN q.questionTags qt " +
             "JOIN qt.tag t " +
+            "WHERE q.createdAt >= :startDate " + //날짜 필터링 추가
             "GROUP BY t.name " +
             "ORDER BY COUNT(q) DESC, t.name ASC")
-    List<ItemCountDto> findTopTags(Pageable pageable);
+    List<ItemCountDto> findTopTags(@Param("startDate") LocalDateTime startDate, Pageable pageable);
 
     // 6. 인기 카테고리 Top N (이름 반환 + 개수 반환)
     @Query("SELECT new org.example.backend.dto.response.ItemCountDto(c.name, COUNT(q)) FROM Question q " +
             "JOIN q.category c " +
+            "WHERE q.createdAt >= :startDate " + //날짜 필터링 추가
             "GROUP BY c.name " +
             "ORDER BY COUNT(q) DESC, c.name ASC")
-    List<ItemCountDto> findTopCategories(Pageable pageable);
+    List<ItemCountDto> findTopCategories(@Param("startDate") LocalDateTime startDate, Pageable pageable);
 
     // 7. 카테고리별 질문 수 통계
     @Query("SELECT c.name, COUNT(q) FROM Question q " +
