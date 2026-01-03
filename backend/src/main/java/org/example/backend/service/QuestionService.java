@@ -134,6 +134,11 @@ public class QuestionService {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
 
+        // 답변이 있는 경우 삭제 불가
+        if (!question.getAnswers().isEmpty()) {
+            throw new IllegalStateException("답변이 작성된 질문은 삭제할 수 없습니다.");
+        }
+
         questionRepository.delete(question);
     }
 }
