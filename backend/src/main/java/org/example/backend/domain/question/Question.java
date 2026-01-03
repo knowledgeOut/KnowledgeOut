@@ -38,6 +38,10 @@ public class Question {
     @Column(nullable = false)
     private int viewCount = 0;
 
+    @ColumnDefault("false")
+    @Column(nullable = false)
+    private boolean status = false;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

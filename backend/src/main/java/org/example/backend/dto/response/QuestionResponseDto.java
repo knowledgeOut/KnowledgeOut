@@ -17,6 +17,7 @@ public class QuestionResponseDto {
     private String content;
     private int viewCount;
     private int answerCount; // [추가] 답변 개수 (프론트엔드 상태 표시용)
+    private boolean status; // 질문 상태
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
 
@@ -44,6 +45,7 @@ public class QuestionResponseDto {
                 question.getContent(),
                 question.getViewCount(),
                 answers.size(), // 삭제되지 않은 답변 개수
+                question.isStatus(), // status 필드 추가
                 question.getCreatedAt(),
                 question.getModifiedAt(),
                 // Member 정보
