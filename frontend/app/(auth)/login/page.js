@@ -68,8 +68,16 @@ export default function LoginPage() {
             // Spring Security 세션 기반 인증을 사용하므로 클라이언트에서 사용자 정보를 저장하지 않습니다
             router.push('/');
         } catch (error) {
-            // 백엔드 에러 메시지 추출
-            const errorMessage = error.message || '로그인에 실패했습니다.';
+            // 로그인 실패 시 적절한 메시지로 변환
+            let errorMessage = error.message || '로그인에 실패했습니다.';
+            
+            // "로그인이 필요합니다." 또는 로그인 관련 에러인 경우 메시지 변경
+            if (errorMessage.includes('로그인이 필요합니다') || 
+                errorMessage.includes('로그인') ||
+                (error.response && error.response.status === 401)) {
+                errorMessage = '이메일 또는 비밀번호를 확인해 주세요.';
+            }
+            
             setSubmitError(errorMessage);
         } finally {
             setIsSubmitting(false);

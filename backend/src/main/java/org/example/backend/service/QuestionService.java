@@ -57,9 +57,16 @@ public class QuestionService {
     // 질문 상세 조회
     @Transactional
     public QuestionResponseDto getQuestion(Long id) {
+        // 1. 조회수 증가
+        // (먼저 증가시켜야 DB에 반영되고, 이후 조회 시 최신 viewCount를 가져옵니다)
+        questionRepository.updateViewCount(id);
+
+        // 2. 엔티티 조회
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 질문입니다."));
-        questionRepository.updateViewCount(id);
+
+        // 3. DTO 변환 (Lazy Loading 발생 지점)
+        // @Transactional 안에서 실행되므로 Member, Tags, Category 등을 안전하게 가져옵니다.
         return QuestionResponseDto.fromEntity(question);
     }
 
