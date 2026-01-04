@@ -10,6 +10,12 @@ import org.springframework.data.jpa.domain.Specification;
 
 public class QuestionSpecification {
 
+    //삭제되지 않은 질문(status = false)만 필터링
+    public static Specification<Question> isNotDeleted() {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("status"), false);
+    }
+
     // 1. 카테고리 이름으로 필터링
     public static Specification<Question> equalCategory(String categoryName) {
         return (root, query, criteriaBuilder) -> {

@@ -91,7 +91,7 @@ public class QuestionService {
 
     // 공통 Specification 생성 로직
     private Specification<Question> createSpecification(String category, String tag, String status, String search) {
-        Specification<Question> spec = Specification.where(null);
+        Specification<Question> spec = Specification.where(QuestionSpecification.isNotDeleted());
 
         // [수정된 부분] 검색어(search) 처리 로직
         if (search != null && !search.trim().isEmpty()) {
@@ -143,7 +143,7 @@ public class QuestionService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
 
         question.update(request.getTitle(), request.getContent(), category);
-        
+
         // status 필드 업데이트 (null이 아니면 업데이트)
         if (request.getStatus() != null) {
             question.setStatus(request.getStatus());
@@ -174,7 +174,7 @@ public class QuestionService {
         // 답변 중 status가 false인 답변이 있으면 삭제 불가
         boolean hasActiveAnswer = question.getAnswers().stream()
                 .anyMatch(answer -> answer.isNotDeleted()); // status가 false인 답변이 있는지 확인
-        
+
         if (hasActiveAnswer) {
             throw new IllegalStateException("삭제되지 않은 답변이 있는 질문은 삭제할 수 없습니다.");
         }
