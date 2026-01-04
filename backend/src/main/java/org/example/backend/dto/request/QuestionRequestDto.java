@@ -14,5 +14,6 @@ public class QuestionRequestDto {
     private Long categoryId;    
     private String title;     
     private String content;     
-    private List<String> tagNames; 
+    private List<String> tagNames;
+    private Boolean status; // 질문 상태 (null일 수 있음)
 }
