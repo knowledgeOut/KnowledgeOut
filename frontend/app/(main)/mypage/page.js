@@ -6,7 +6,6 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import * as memberApi from '../../../features/member/api';
 import { getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
-import { useLogout } from '../../../features/auth/hooks';
 import { MyPageUserInfoSection } from '@/components/common/MyPageUserInfoSection';
 import { MyPageActivityTabs } from '@/components/common/MyPageActivityTabs';
 
@@ -15,7 +14,6 @@ export default function MyPagePage() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { logout: handleLogoutApi } = useLogout();
     
     // 활동 데이터 상태
     const [myQuestions, setMyQuestions] = useState([]);
@@ -83,10 +81,6 @@ export default function MyPagePage() {
         router.back();
     };
 
-    const handleLogout = () => {
-        handleLogoutApi();
-    };
-
     const handleSelectQuestion = (questionId) => {
         router.push(`/questions/${questionId}`);
     };
@@ -122,17 +116,12 @@ export default function MyPagePage() {
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-4xl mx-auto space-y-6">
-                <div className="flex items-center justify-between">
-                    <Button variant="ghost" onClick={handleBack} className="gap-2">
+                <Button variant="ghost" onClick={handleBack} className="gap-2 mb-6">
                         <ArrowLeft className="w-4 h-4" />
                         돌아가기
                     </Button>
-                    <Button variant="outline" onClick={handleLogout}>
-                        로그아웃
-                    </Button>
-                </div>
 
-                <MyPageUserInfoSection user={user} onLogout={handleLogout} />
+                <MyPageUserInfoSection user={user} />
 
                 <MyPageActivityTabs
                     myQuestions={myQuestions}
