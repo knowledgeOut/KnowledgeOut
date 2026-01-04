@@ -42,6 +42,10 @@ public class QuestionService {
         question.setContent(request.getContent());
         question.setMember(member);
         question.setCategory(category);
+        // status 필드 설정 (null이면 기본값 false 사용)
+        if (request.getStatus() != null) {
+            question.setStatus(request.getStatus());
+        }
 
         if (request.getTagNames() != null) {
             for (String tagName : request.getTagNames()) {
@@ -139,6 +143,11 @@ public class QuestionService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
 
         question.update(request.getTitle(), request.getContent(), category);
+        
+        // status 필드 업데이트 (null이 아니면 업데이트)
+        if (request.getStatus() != null) {
+            question.setStatus(request.getStatus());
+        }
 
         if (request.getTagNames() != null) {
             question.getQuestionTags().clear(); // 기존 연관관계 제거 (OrphanRemoval 설정 필요)
@@ -162,11 +171,15 @@ public class QuestionService {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
 
-        // 답변이 있는 경우 삭제 불가
-        if (!question.getAnswers().isEmpty()) {
-            throw new IllegalStateException("답변이 작성된 질문은 삭제할 수 없습니다.");
+        // 답변 중 status가 false인 답변이 있으면 삭제 불가
+        boolean hasActiveAnswer = question.getAnswers().stream()
+                .anyMatch(answer -> answer.isNotDeleted()); // status가 false인 답변이 있는지 확인
+        
+        if (hasActiveAnswer) {
+            throw new IllegalStateException("삭제되지 않은 답변이 있는 질문은 삭제할 수 없습니다.");
         }
 
-        questionRepository.delete(question);
+        // 소프트 삭제: status를 true로 설정
+        question.setStatus(true);
     }
 }
