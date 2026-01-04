@@ -1,19 +1,72 @@
 'use client';
 
-import { MessageCircle, Eye } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MessageCircle, Eye, ThumbsUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { likeQuestion } from '@/features/question/api';
 
 /**
  * 질문 목록 컴포넌트
  * 백엔드 QuestionResponseDto 필드:
  * - id, title, content, viewCount, answerCount, createdAt, modifiedAt
- * - memberId, memberNickname, categoryId, categoryName, tagNames
+ * - memberId, memberNickname, categoryId, categoryName, tagNames, likeCount
  */
 export function QuestionList({ questions, onSelectQuestion }) {
+    // 각 질문의 좋아요 수를 관리하는 상태
+    const [likeCounts, setLikeCounts] = useState(() => {
+        const counts = {};
+        questions.forEach(q => {
+            counts[q.id] = q.likeCount || q.like || 0;
+        });
+        return counts;
+    });
+
+    // 각 질문의 좋아요 클릭 상태를 관리하는 상태
+    const [likedQuestions, setLikedQuestions] = useState(new Set());
+
+    // questions prop이 변경될 때 likeCounts 업데이트
+    useEffect(() => {
+        const counts = {};
+        questions.forEach(q => {
+            counts[q.id] = q.likeCount || q.like || 0;
+        });
+        setLikeCounts(prev => {
+            // 기존 값은 유지하고, 새로운 질문이나 변경된 값만 업데이트
+            return { ...prev, ...counts };
+        });
+    }, [questions]);
+
     // 답변 상태 계산 (answerCount > 0 이면 답변완료)
     const getStatus = (question) => {
         return question.answerCount > 0 ? 'answered' : 'pending';
+    };
+
+    // 추천 버튼 클릭 핸들러
+    const handleLikeClick = async (e, questionId) => {
+        e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
+        
+        try {
+            const newLikeCount = await likeQuestion(questionId);
+            setLikeCounts(prev => ({
+                ...prev,
+                [questionId]: newLikeCount
+            }));
+            
+            // 좋아요 상태 토글
+            setLikedQuestions(prev => {
+                const newSet = new Set(prev);
+                if (newSet.has(questionId)) {
+                    newSet.delete(questionId);
+                } else {
+                    newSet.add(questionId);
+                }
+                return newSet;
+            });
+        } catch (error) {
+            console.error('추천 처리 중 오류:', error);
+            alert(error.message || '추천 처리에 실패했습니다.');
+        }
     };
 
     return (
@@ -57,6 +110,19 @@ export function QuestionList({ questions, onSelectQuestion }) {
                                     <div className="flex items-center gap-1">
                                         <Eye className="w-4 h-4" />
                                         <span>{question.viewCount || 0}</span>
+                                    </div>
+                                    <div 
+                                        className="flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
+                                        onClick={(e) => handleLikeClick(e, question.id)}
+                                    >
+                                        <ThumbsUp 
+                                            className={`w-4 h-4 ${
+                                                likedQuestions.has(question.id) 
+                                                    ? 'fill-gray-200' 
+                                                    : ''
+                                            }`}
+                                        />
+                                        <span>{likeCounts[question.id] ?? (question.likeCount ?? question.like ?? 0)}</span>
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <MessageCircle className="w-4 h-4" />
