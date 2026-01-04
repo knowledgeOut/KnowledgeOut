@@ -18,8 +18,10 @@ public class AdminController {
 
     @GetMapping("/dashboard")
     public ResponseEntity<AdminDashboardDto> getDashboard(
-            @RequestParam(defaultValue = "7") int days // 기본값 7일
+            // days 파라미터 받기 (기본값 7)
+            @RequestParam(name = "days", defaultValue = "7") int days
     ) {
+        // 서비스 호출 시 days 전달
         return ResponseEntity.ok(adminService.getDashboardData(days));
     }
 }
