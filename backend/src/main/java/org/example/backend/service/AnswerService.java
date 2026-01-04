@@ -69,8 +69,12 @@ public class AnswerService {
             throw new IllegalArgumentException("질문과 답변이 일치하지 않습니다.");
         }
         
-        // 작성자 검증
-        if (!answer.getMember().getId().equals(member.getId())) {
+        // 관리자 권한 확인
+        boolean isAdmin = member.getRole() == org.example.backend.domain.member.Role.ROLE_ADMIN;
+        boolean isAuthor = answer.getMember().getId().equals(member.getId());
+        
+        // 관리자가 아니고 작성자도 아닌 경우 삭제 권한 없음
+        if (!isAdmin && !isAuthor) {
             throw new IllegalArgumentException("답변을 삭제할 권한이 없습니다.");
         }
         

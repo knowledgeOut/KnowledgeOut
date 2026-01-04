@@ -167,16 +167,32 @@ public class QuestionService {
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 질문입니다."));
 
-        if (!question.getMember().getEmail().equals(email)) {
+        // 현재 사용자 조회
+        Member currentMember = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        // 관리자가 아니고 작성자도 아닌 경우 삭제 권한 없음
+        boolean isAdmin = currentMember.getRole() == org.example.backend.domain.member.Role.ROLE_ADMIN;
+        boolean isAuthor = question.getMember().getEmail().equals(email);
+        
+        if (!isAdmin && !isAuthor) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
 
-        // 답변 중 status가 false인 답변이 있으면 삭제 불가
-        boolean hasActiveAnswer = question.getAnswers().stream()
-                .anyMatch(answer -> answer.isNotDeleted()); // status가 false인 답변이 있는지 확인
+        // 관리자가 아닌 경우에만 답변 체크
+        if (!isAdmin) {
+            // 답변 중 status가 false인 답변이 있으면 삭제 불가
+            boolean hasActiveAnswer = question.getAnswers().stream()
+                    .anyMatch(answer -> answer.isNotDeleted()); // status가 false인 답변이 있는지 확인
 
-        if (hasActiveAnswer) {
-            throw new IllegalStateException("삭제되지 않은 답변이 있는 질문은 삭제할 수 없습니다.");
+            if (hasActiveAnswer) {
+                throw new IllegalStateException("삭제되지 않은 답변이 있는 질문은 삭제할 수 없습니다.");
+            }
+        } else {
+            // 관리자인 경우 질문에 작성된 모든 답변도 함께 삭제 처리
+            question.getAnswers().stream()
+                    .filter(answer -> answer.isNotDeleted()) // 삭제되지 않은 답변만
+                    .forEach(answer -> answer.delete()); // soft delete 수행
         }
 
         // 소프트 삭제: status를 true로 설정

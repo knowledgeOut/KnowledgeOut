@@ -38,8 +38,7 @@ public class Question {
     @Column(nullable = false)
     private int viewCount = 0;
 
-    @ColumnDefault("false")
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private boolean status = false;
 
     @CreatedDate
