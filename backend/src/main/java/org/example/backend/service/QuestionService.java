@@ -100,19 +100,40 @@ public class QuestionService {
 
     // 공통 Specification 생성 로직
     private Specification<Question> createSpecification(String category, String tag, String status, String search) {
-        Specification<Question> spec = Specification.where(null);
+        Specification<Question> spec = Specification.where(QuestionSpecification.isNotDeleted());
+
+        // [수정된 부분] 검색어(search) 처리 로직
         if (search != null && !search.trim().isEmpty()) {
-            spec = spec.and(QuestionSpecification.containsKeyword(search.trim()));
+            String keyword = search.trim(); // 공백 제거
+
+            if (keyword.startsWith("#")) {
+                // 1. '#'으로 시작하면 태그 검색으로 간주
+                // 예: "#자바" -> substring(1)을 통해 "자바"만 추출
+                String tagName = keyword.substring(1);
+
+                // '#'만 입력된 경우가 아닐 때만 실행
+                if (!tagName.isEmpty()) {
+                    spec = spec.and(QuestionSpecification.hasTag(tagName));
+                }
+            } else {
+                // 2. '#'이 없으면 기존대로 제목+내용 검색
+                spec = spec.and(QuestionSpecification.containsKeyword(keyword));
+            }
         }
+
         if (category != null && !category.equals("전체") && !category.isEmpty()) {
             spec = spec.and(QuestionSpecification.equalCategory(category));
         }
+
+        // 태그를 클릭해서 들어온 경우 (URL 파라미터 ?tag=...)
         if (tag != null) {
             spec = spec.and(QuestionSpecification.hasTag(tag));
         }
+
         if (status != null) {
             spec = spec.and(QuestionSpecification.filterByStatus(status));
         }
+
         return spec;
     }
 
@@ -131,7 +152,7 @@ public class QuestionService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
 
         question.update(request.getTitle(), request.getContent(), category);
-        
+
         // status 필드 업데이트 (null이 아니면 업데이트)
         if (request.getStatus() != null) {
             question.setStatus(request.getStatus());
@@ -181,16 +202,32 @@ public class QuestionService {
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 질문입니다."));
 
-        if (!question.getMember().getEmail().equals(email)) {
+        // 현재 사용자 조회
+        Member currentMember = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        // 관리자가 아니고 작성자도 아닌 경우 삭제 권한 없음
+        boolean isAdmin = currentMember.getRole() == org.example.backend.domain.member.Role.ROLE_ADMIN;
+        boolean isAuthor = question.getMember().getEmail().equals(email);
+        
+        if (!isAdmin && !isAuthor) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
 
-        // 답변 중 status가 false인 답변이 있으면 삭제 불가
-        boolean hasActiveAnswer = question.getAnswers().stream()
-                .anyMatch(answer -> answer.isNotDeleted()); // status가 false인 답변이 있는지 확인
-        
-        if (hasActiveAnswer) {
-            throw new IllegalStateException("삭제되지 않은 답변이 있는 질문은 삭제할 수 없습니다.");
+        // 관리자가 아닌 경우에만 답변 체크
+        if (!isAdmin) {
+            // 답변 중 status가 false인 답변이 있으면 삭제 불가
+            boolean hasActiveAnswer = question.getAnswers().stream()
+                    .anyMatch(answer -> answer.isNotDeleted()); // status가 false인 답변이 있는지 확인
+
+            if (hasActiveAnswer) {
+                throw new IllegalStateException("삭제되지 않은 답변이 있는 질문은 삭제할 수 없습니다.");
+            }
+        } else {
+            // 관리자인 경우 질문에 작성된 모든 답변도 함께 삭제 처리
+            question.getAnswers().stream()
+                    .filter(answer -> answer.isNotDeleted()) // 삭제되지 않은 답변만
+                    .forEach(answer -> answer.delete()); // soft delete 수행
         }
 
         // 소프트 삭제: status를 true로 설정

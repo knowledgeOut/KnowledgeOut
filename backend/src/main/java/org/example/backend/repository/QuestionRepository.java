@@ -1,6 +1,7 @@
 package org.example.backend.repository;
 
 import org.example.backend.domain.question.Question;
+import org.example.backend.dto.response.ItemCountDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSpecificationExecutor<Question> {
@@ -35,21 +37,23 @@ public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSp
 
     // --- [추가된 통계 기능] ---
 
-    // 5. 인기 태그 Top N (이름 반환)
+    // 5. 인기 태그 Top N (이름 반환 + 개 수 반환)
     // 경로: Question -> QuestionTag -> Tag -> name
-    @Query("SELECT t.name FROM Question q " +
+    @Query("SELECT new org.example.backend.dto.response.ItemCountDto(t.name, COUNT(q)) FROM Question q " +
             "JOIN q.questionTags qt " +
             "JOIN qt.tag t " +
+            "WHERE q.createdAt >= :startDate " + //날짜 필터링 추가
             "GROUP BY t.name " +
-            "ORDER BY COUNT(q) DESC")
-    List<String> findTopTags(Pageable pageable);
+            "ORDER BY COUNT(q) DESC, t.name ASC")
+    List<ItemCountDto> findTopTags(@Param("startDate") LocalDateTime startDate, Pageable pageable);
 
-    // 6. 인기 카테고리 Top N (이름 반환)
-    @Query("SELECT c.name FROM Question q " +
+    // 6. 인기 카테고리 Top N (이름 반환 + 개수 반환)
+    @Query("SELECT new org.example.backend.dto.response.ItemCountDto(c.name, COUNT(q)) FROM Question q " +
             "JOIN q.category c " +
+            "WHERE q.createdAt >= :startDate " + //날짜 필터링 추가
             "GROUP BY c.name " +
-            "ORDER BY COUNT(q) DESC")
-    List<String> findTopCategories(Pageable pageable);
+            "ORDER BY COUNT(q) DESC, c.name ASC")
+    List<ItemCountDto> findTopCategories(@Param("startDate") LocalDateTime startDate, Pageable pageable);
 
     // 7. 카테고리별 질문 수 통계
     @Query("SELECT c.name, COUNT(q) FROM Question q " +
