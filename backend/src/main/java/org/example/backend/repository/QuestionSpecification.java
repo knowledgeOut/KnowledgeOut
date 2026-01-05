@@ -2,6 +2,8 @@ package org.example.backend.repository;
 
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Subquery;
+import org.example.backend.domain.answer.Answer;
 import org.example.backend.domain.category.Category;
 import org.example.backend.domain.question.Question;
 import org.example.backend.domain.question.QuestionTag;
@@ -36,15 +38,31 @@ public class QuestionSpecification {
         };
     }
 
-    // 3. 답변 상태로 필터링
+    // 3. 답변 상태로 필터링 (삭제되지 않은 답변만 기준)
     public static Specification<Question> filterByStatus(String status) {
         return (root, query, criteriaBuilder) -> {
             if (status == null || status.isEmpty() || status.equals("ALL")) return null;
 
             if (status.equals("WAITING")) {
-                return criteriaBuilder.isEmpty(root.get("answers"));
+                // 삭제되지 않은 답변(status=false)이 없는 질문
+                Subquery<Long> subquery = query.subquery(Long.class);
+                jakarta.persistence.criteria.Root<Answer> answerRoot = subquery.from(Answer.class);
+                subquery.select(answerRoot.get("id"))
+                        .where(
+                            criteriaBuilder.equal(answerRoot.get("question"), root),
+                            criteriaBuilder.equal(answerRoot.get("status"), false)
+                        );
+                return criteriaBuilder.not(criteriaBuilder.exists(subquery));
             } else if (status.equals("ANSWERED")) {
-                return criteriaBuilder.isNotEmpty(root.get("answers"));
+                // 삭제되지 않은 답변(status=false)이 있는 질문
+                Subquery<Long> subquery = query.subquery(Long.class);
+                jakarta.persistence.criteria.Root<Answer> answerRoot = subquery.from(Answer.class);
+                subquery.select(answerRoot.get("id"))
+                        .where(
+                            criteriaBuilder.equal(answerRoot.get("question"), root),
+                            criteriaBuilder.equal(answerRoot.get("status"), false)
+                        );
+                return criteriaBuilder.exists(subquery);
             }
             return null;
         };
