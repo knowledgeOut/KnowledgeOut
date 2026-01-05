@@ -9,10 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LoginForm } from "./LoginForm";
+import { SignupForm } from "./SignupForm";
 import { signup, login } from "@/features/auth/api";
 import { getCurrentUser } from "@/features/member/api";
 import { getErrorMessage, ErrorCode, isErrorCode } from "@/lib/errorCodes";
@@ -445,121 +444,44 @@ export function AuthDialog({
           </TabsList>
 
           <TabsContent value="login">
-            <form onSubmit={handleLogin} className="space-y-4 pt-4">
-              <div>
-                <Label htmlFor="login-email">이메일</Label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  value={state.login.email}
-                  onChange={(e) => {
-                    dispatch({ type: ActionType.SET_LOGIN_EMAIL, payload: e.target.value });
-                  }}
-                  placeholder="example@email.com"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="login-password">비밀번호</Label>
-                <Input
-                  id="login-password"
-                  type="password"
-                  value={state.login.password}
-                  onChange={(e) => {
-                    dispatch({ type: ActionType.SET_LOGIN_PASSWORD, payload: e.target.value });
-                  }}
-                  placeholder="비밀번호"
-                  required
-                />
-              </div>
-              {state.login.error && (
-                <div className="text-red-500 text-sm">
-                  {state.login.error}
-                </div>
-              )}
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={state.login.isSubmitting}
-              >
-                {state.login.isSubmitting ? "로그인 중..." : "로그인"}
-              </Button>
-            </form>
+            <LoginForm
+              email={state.login.email}
+              password={state.login.password}
+              error={state.login.error}
+              isSubmitting={state.login.isSubmitting}
+              onEmailChange={(value) => {
+                dispatch({ type: ActionType.SET_LOGIN_EMAIL, payload: value });
+              }}
+              onPasswordChange={(value) => {
+                dispatch({ type: ActionType.SET_LOGIN_PASSWORD, payload: value });
+              }}
+              onSubmit={handleLogin}
+            />
           </TabsContent>
 
           <TabsContent value="signup">
-            <form onSubmit={handleSignup} className="space-y-4 pt-4">
-              <div>
-                <Label htmlFor="signup-nickname">닉네임</Label>
-                <Input
-                  id="signup-nickname"
-                  value={state.signup.nickname}
-                  onChange={(e) => {
-                    dispatch({ type: ActionType.SET_SIGNUP_NICKNAME, payload: e.target.value });
-                  }}
-                  placeholder="닉네임을 입력하세요"
-                  required
-                  className={state.signup.fieldErrors.nickname ? 'border-red-500 focus-visible:ring-red-500' : ''}
-                />
-                {state.signup.fieldErrors.nickname && (
-                  <p className="text-xs text-red-500 mt-1">{state.signup.fieldErrors.nickname}</p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="signup-email">이메일</Label>
-                <Input
-                  id="signup-email"
-                  type="email"
-                  value={state.signup.email}
-                  onChange={(e) => {
-                    dispatch({ type: ActionType.SET_SIGNUP_EMAIL, payload: e.target.value });
-                  }}
-                  placeholder="example@email.com"
-                  required
-                  className={state.signup.fieldErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}
-                />
-                {state.signup.fieldErrors.email && (
-                  <p className="text-xs text-red-500 mt-1">{state.signup.fieldErrors.email}</p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="signup-password">비밀번호</Label>
-                <Input
-                  id="signup-password"
-                  type="password"
-                  value={state.signup.password}
-                  onChange={(e) => {
-                    dispatch({ type: ActionType.SET_SIGNUP_PASSWORD, payload: e.target.value });
-                  }}
-                  placeholder="8자 이상 입력하세요"
-                  required
-                  className={state.signup.fieldErrors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}
-                />
-                {state.signup.fieldErrors.password && (
-                  <p className="text-xs text-red-500 mt-1">{state.signup.fieldErrors.password}</p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="signup-confirm-password">비밀번호 확인</Label>
-                <Input
-                  id="signup-confirm-password"
-                  type="password"
-                  value={state.signup.confirmPassword}
-                  onChange={(e) => {
-                    dispatch({ type: ActionType.SET_SIGNUP_CONFIRM_PASSWORD, payload: e.target.value });
-                  }}
-                  placeholder="비밀번호 확인"
-                  required
-                  className={state.signup.fieldErrors.confirmPassword ? 'border-red-500 focus-visible:ring-red-500' : ''}
-                />
-                {state.signup.fieldErrors.confirmPassword && (
-                  <p className="text-xs text-red-500 mt-1">{state.signup.fieldErrors.confirmPassword}</p>
-                )}
-              </div>
-              <Button type="submit" className="w-full" disabled={state.signup.isSubmitting}>
-                {state.signup.isSubmitting ? "가입 중..." : "회원가입"}
-              </Button>
-            </form>
+            <SignupForm
+              nickname={state.signup.nickname}
+              email={state.signup.email}
+              password={state.signup.password}
+              confirmPassword={state.signup.confirmPassword}
+              fieldErrors={state.signup.fieldErrors}
+              error={state.signup.error}
+              isSubmitting={state.signup.isSubmitting}
+              onNicknameChange={(value) => {
+                dispatch({ type: ActionType.SET_SIGNUP_NICKNAME, payload: value });
+              }}
+              onEmailChange={(value) => {
+                dispatch({ type: ActionType.SET_SIGNUP_EMAIL, payload: value });
+              }}
+              onPasswordChange={(value) => {
+                dispatch({ type: ActionType.SET_SIGNUP_PASSWORD, payload: value });
+              }}
+              onConfirmPasswordChange={(value) => {
+                dispatch({ type: ActionType.SET_SIGNUP_CONFIRM_PASSWORD, payload: value });
+              }}
+              onSubmit={handleSignup}
+            />
           </TabsContent>
         </Tabs>
       </DialogContent>
