@@ -332,54 +332,42 @@ export default function QuestionDetailPage({ params }) {
               </div>
 
               <div className="pt-4 border-t">
-                {question.answerCount === 0 ? (
-                  <>
-                    {(isQuestionAuthor || isAdmin) ? (
-                      <div className="flex justify-end gap-2">
-                        {isQuestionAuthor && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleEditQuestion}
-                            className="gap-2"
-                          >
-                            <Edit className="w-4 h-4" /> 수정
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleDeleteQuestion}
-                          className="gap-2 text-red-600 hover:bg-red-50 border-red-100"
-                        >
-                          <Trash2 className="w-4 h-4" /> 삭제
-                        </Button>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">
-                        답변이 달린 질문은 수정 및 삭제가 불가합니다.
-                      </p>
+                <p className="text-sm text-gray-500 mb-3 text-right">
+                  답변이 달린 질문은 수정 및 삭제가 불가합니다.
+                </p>
+                {question.answerCount === 0 && (isQuestionAuthor || isAdmin) && (
+                  <div className="flex justify-end gap-2">
+                    {isQuestionAuthor && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleEditQuestion}
+                        className="gap-2"
+                      >
+                        <Edit className="w-4 h-4" /> 수정
+                      </Button>
                     )}
-                  </>
-                ) : (
-                  <>
-                    {isAdmin ? (
-                      <div className="flex justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleDeleteQuestion}
-                          className="gap-2 text-red-600 hover:bg-red-50 border-red-100"
-                        >
-                          <Trash2 className="w-4 h-4" /> 삭제
-                        </Button>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">
-                        답변이 달린 질문은 수정 및 삭제가 불가합니다.
-                      </p>
-                    )}
-                  </>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeleteQuestion}
+                      className="gap-2 text-red-600 hover:bg-red-50 border-red-100"
+                    >
+                      <Trash2 className="w-4 h-4" /> 삭제
+                    </Button>
+                  </div>
+                )}
+                {question.answerCount > 0 && isAdmin && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeleteQuestion}
+                      className="gap-2 text-red-600 hover:bg-red-50 border-red-100"
+                    >
+                      <Trash2 className="w-4 h-4" /> 삭제
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
