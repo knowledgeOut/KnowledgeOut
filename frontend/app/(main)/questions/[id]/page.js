@@ -30,7 +30,7 @@ import {
   deleteAnswer,
   updateAnswer,
 } from "@/features/answer/api";
-import { getMyPage, getMyQuestionLikes } from "@/features/member/api";
+import { getCurrentUser, getCurrentUserQuestionLikes } from "@/features/member/api";
 
 export default function QuestionDetailPage({ params }) {
   // Next.js 15: params는 Promise이므로 use()를 통해 언래핑
@@ -64,14 +64,14 @@ export default function QuestionDetailPage({ params }) {
     const checkAuth = async () => {
       try {
         setIsAuthChecking(true);
-        const userData = await getMyPage();
+        const userData = await getCurrentUser();
         // API 응답 구조에 따라 id 또는 memberId 확인
         if (userData && getUserId(userData)) {
           setCurrentUser(userData);
           
           // 추천한 질문 목록 가져오기
           try {
-            const likedData = await getMyQuestionLikes();
+            const likedData = await getCurrentUserQuestionLikes();
             const likedIds = new Set((likedData || []).map(q => String(q.id)));
             setLikedQuestionIds(likedIds);
           } catch (error) {

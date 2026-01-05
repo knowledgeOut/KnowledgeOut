@@ -63,20 +63,23 @@ public class SecurityConfig {
                         // (1) 공개 경로
                         .requestMatchers("/api/knowledgeout/members/signup", "/api/knowledgeout/members/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/knowledgeout", "/api/knowledgeout/questions/**", "/api/knowledgeout/categories").permitAll()
+                        
+                        // (2) 선택적 인증 경로 (로그인하지 않은 경우에도 접근 가능)
+                        .requestMatchers(HttpMethod.GET, "/api/knowledgeout/members/current").permitAll()
 
-                        // (2) 관리자 경로
+                        // (3) 관리자 경로
                         // 주의: DB 권한이 'ROLE_ADMIN'이면 hasRole("ADMIN")
                         // DB 권한이 그냥 'ADMIN'이면 hasAuthority("ADMIN") 사용
                         .requestMatchers("/api/knowledgeout/admin/**").hasRole("ADMIN")
 
-                        // (3) 회원 전용 경로
+                        // (4) 회원 전용 경로
                         .requestMatchers(
                                 "/api/knowledgeout/members/mypage",
                                 "/api/knowledgeout/members/mypage/**",
                                 "/api/knowledgeout/members/{id}" // 본인 확인 로직은 Service나 Controller에서 추가 검증 필요
                         ).authenticated()
 
-                        // (4) 그 외 나머지
+                        // (5) 그 외 나머지
                         .anyRequest().authenticated()
                 )
 

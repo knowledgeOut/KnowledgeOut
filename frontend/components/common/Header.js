@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { User as UserIcon, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "@/components/common/AuthDialog";
-import { getMyPage } from "@/features/member/api";
+import { getCurrentUser } from "@/features/member/api";
 import { logout } from "@/features/auth/api";
 
 export function Header() {
@@ -19,14 +19,18 @@ export function Header() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const userData = await getMyPage();
-        setCurrentUser({
-          id: userData.id,
-          email: userData.email,
-          nickname: userData.nickname,
-          name: userData.nickname,
-          role: userData.role,
-        });
+        const userData = await getCurrentUser();
+        if (userData) {
+          setCurrentUser({
+            id: userData.id,
+            email: userData.email,
+            nickname: userData.nickname,
+            name: userData.nickname,
+            role: userData.role,
+          });
+        } else {
+          setCurrentUser(null);
+        }
       } catch (error) {
         setCurrentUser(null);
       } finally {

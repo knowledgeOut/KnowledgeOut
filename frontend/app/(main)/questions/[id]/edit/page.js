@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getQuestion, updateQuestion } from "@/features/question/api";
-import { getMyPage } from "@/features/member/api";
+import { getCurrentUser } from "@/features/member/api";
 import { getCategories } from "@/features/category/api";
 
 export default function EditQuestionPage({ params }) {
@@ -63,7 +63,12 @@ export default function EditQuestionPage({ params }) {
     const fetchUser = async () => {
       try {
         setLoadingUser(true);
-        await getMyPage();
+        const userData = await getCurrentUser();
+        if (!userData) {
+          setError("로그인이 필요합니다.");
+          router.push(`/questions/${id}`);
+          return;
+        }
       } catch (error) {
         setError("로그인이 필요합니다.");
         router.push(`/questions/${id}`);

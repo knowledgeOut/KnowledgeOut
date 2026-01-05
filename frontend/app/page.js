@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthDialog } from '@/components/common/AuthDialog';
 import { MyPageUserInfoSection } from '@/components/common/MyPageUserInfoSection';
 import { MyPageActivityTabs } from '@/components/common/MyPageActivityTabs';
-import { getMyPage, getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
+import { getCurrentUser, getCurrentUserQuestionLikes, getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
 import { useQuestions } from '@/features/question/hooks';
 import { getCategories } from '@/features/category/api';
 import { getQuestionCounts } from '@/features/question/api';
@@ -67,22 +67,27 @@ export default function Home() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const userData = await getMyPage();
-        setCurrentUser({
-          id: userData.id,
-          email: userData.email,
-          nickname: userData.nickname,
-          name: userData.nickname,
-          role: userData.role,
-        });
-        
-        // 로그인한 사용자의 추천한 질문 목록 가져오기
-        try {
-          const likedData = await getMyQuestionLikes();
-          const likedIds = new Set((likedData || []).map(q => String(q.id)));
-          setLikedQuestionIds(likedIds);
-        } catch (error) {
-          console.error('추천 목록 조회 실패:', error);
+        const userData = await getCurrentUser();
+        if (userData) {
+          setCurrentUser({
+            id: userData.id,
+            email: userData.email,
+            nickname: userData.nickname,
+            name: userData.nickname,
+            role: userData.role,
+          });
+          
+          // 로그인한 사용자의 추천한 질문 목록 가져오기
+          try {
+            const likedData = await getCurrentUserQuestionLikes();
+            const likedIds = new Set((likedData || []).map(q => String(q.id)));
+            setLikedQuestionIds(likedIds);
+          } catch (error) {
+            console.error('추천 목록 조회 실패:', error);
+            setLikedQuestionIds(new Set());
+          }
+        } else {
+          setCurrentUser(null);
           setLikedQuestionIds(new Set());
         }
       } catch (error) {

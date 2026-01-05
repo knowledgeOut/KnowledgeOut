@@ -13,7 +13,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { signup, login } from "../../features/auth/api";
-import { getMyPage } from "../../features/member/api";
+import { getCurrentUser } from "../../features/member/api";
 import { useRouter } from "next/navigation";
 
 export function AuthDialog({
@@ -48,8 +48,8 @@ export function AuthDialog({
 
       // 로그인 성공 후 사용자 정보 가져오기 (Spring Security 세션 기반)
       try {
-        const userData = await getMyPage();
-        if (onLogin) {
+        const userData = await getCurrentUser();
+        if (userData && onLogin) {
           onLogin({
             id: userData.id,
             email: userData.email,
@@ -57,6 +57,9 @@ export function AuthDialog({
             name: userData.nickname, // name 필드도 nickname으로 설정
             role: userData.role, // 관리자 권한 확인을 위해 role 추가
           });
+        } else if (onLogin) {
+          // 사용자 정보 가져오기 실패 시 이메일만 전달
+          onLogin({ email: loginEmail });
         }
       } catch (userError) {
         // 사용자 정보 가져오기 실패 시 이메일만 전달
@@ -122,14 +125,20 @@ export function AuthDialog({
 
         // 로그인 성공 후 사용자 정보 가져오기
         try {
-          const userData = await getMyPage();
-          if (onSignup) {
+          const userData = await getCurrentUser();
+          if (userData && onSignup) {
             onSignup({
               id: userData.id,
               email: userData.email,
               nickname: userData.nickname,
               name: userData.nickname, // name 필드도 nickname으로 설정
               role: userData.role, // 관리자 권한 확인을 위해 role 추가
+            });
+          } else if (onSignup) {
+            // 사용자 정보 가져오기 실패 시 기본 정보만 전달
+            onSignup({
+              email: signupEmail,
+              nickname: signupNickname,
             });
           }
         } catch (userError) {

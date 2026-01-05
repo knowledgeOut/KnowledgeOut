@@ -9,7 +9,9 @@ import org.example.backend.dto.response.QuestionResponseDto;
 import org.example.backend.repository.MemberRepository;
 import org.example.backend.service.MemberService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +23,25 @@ import java.util.List;
 public class MemberController {
     private final MemberService memberService;
     private final MemberRepository memberRepository;
+
+    // 현재 로그인한 사용자 정보 조회 (선택적 인증 - 로그인하지 않은 경우 null 반환)
+    @GetMapping("/current")
+    public ResponseEntity<MemberResponseDto> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getName().equals("anonymousUser") || !(authentication.getPrincipal() instanceof User)) {
+            return ResponseEntity.noContent().build();
+        }
+        try {
+            User user = (User) authentication.getPrincipal();
+            Long memberId = memberRepository.findByEmail(user.getUsername())
+                    .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."))
+                    .getId();
+            MemberResponseDto response = memberService.getMember(memberId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 
     // 마이페이지 정보 조회
     @GetMapping("/mypage")

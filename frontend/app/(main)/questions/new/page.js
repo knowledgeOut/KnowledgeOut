@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createQuestion } from '@/features/question/api';
-import { getMyPage } from '@/features/member/api';
+import { getCurrentUser } from '@/features/member/api';
 import { getCategories } from '@/features/category/api';
 
 export default function NewQuestionPage() {
@@ -31,7 +31,12 @@ export default function NewQuestionPage() {
         const fetchUser = async () => {
             try {
                 setLoadingUser(true);
-                const userData = await getMyPage();
+                const userData = await getCurrentUser();
+                if (!userData) {
+                    alert('로그인이 필요합니다.');
+                    router.push('/');
+                    return;
+                }
                 setAuthor(userData.nickname || userData.email || '');
             } catch (error) {
                 console.error('사용자 정보를 불러오는데 실패했습니다:', error);
