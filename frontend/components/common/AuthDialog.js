@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useReducer, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -17,6 +17,196 @@ import { signup, login } from "@/features/auth/api";
 import { getCurrentUser } from "@/features/member/api";
 import { getErrorMessage, ErrorCode, isErrorCode } from "@/lib/errorCodes";
 
+// 초기 상태
+const initialState = {
+  login: {
+    email: "",
+    password: "",
+    error: "",
+    isSubmitting: false,
+  },
+  signup: {
+    nickname: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    error: "",
+    fieldErrors: {
+      nickname: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    isSubmitting: false,
+  },
+};
+
+// Action types
+const ActionType = {
+  // Login actions
+  SET_LOGIN_EMAIL: "SET_LOGIN_EMAIL",
+  SET_LOGIN_PASSWORD: "SET_LOGIN_PASSWORD",
+  SET_LOGIN_ERROR: "SET_LOGIN_ERROR",
+  SET_LOGIN_SUBMITTING: "SET_LOGIN_SUBMITTING",
+  RESET_LOGIN: "RESET_LOGIN",
+  
+  // Signup actions
+  SET_SIGNUP_NICKNAME: "SET_SIGNUP_NICKNAME",
+  SET_SIGNUP_EMAIL: "SET_SIGNUP_EMAIL",
+  SET_SIGNUP_PASSWORD: "SET_SIGNUP_PASSWORD",
+  SET_SIGNUP_CONFIRM_PASSWORD: "SET_SIGNUP_CONFIRM_PASSWORD",
+  SET_SIGNUP_ERROR: "SET_SIGNUP_ERROR",
+  SET_SIGNUP_FIELD_ERROR: "SET_SIGNUP_FIELD_ERROR",
+  SET_SIGNUP_FIELD_ERRORS: "SET_SIGNUP_FIELD_ERRORS",
+  SET_SIGNUP_SUBMITTING: "SET_SIGNUP_SUBMITTING",
+  RESET_SIGNUP: "RESET_SIGNUP",
+  
+  // Reset all
+  RESET_ALL: "RESET_ALL",
+};
+
+// Reducer
+function authReducer(state, action) {
+  switch (action.type) {
+    // Login actions
+    case ActionType.SET_LOGIN_EMAIL:
+      return {
+        ...state,
+        login: {
+          ...state.login,
+          email: action.payload,
+          error: "", // 입력 시 에러 초기화
+        },
+      };
+    case ActionType.SET_LOGIN_PASSWORD:
+      return {
+        ...state,
+        login: {
+          ...state.login,
+          password: action.payload,
+          error: "", // 입력 시 에러 초기화
+        },
+      };
+    case ActionType.SET_LOGIN_ERROR:
+      return {
+        ...state,
+        login: {
+          ...state.login,
+          error: action.payload,
+        },
+      };
+    case ActionType.SET_LOGIN_SUBMITTING:
+      return {
+        ...state,
+        login: {
+          ...state.login,
+          isSubmitting: action.payload,
+        },
+      };
+    case ActionType.RESET_LOGIN:
+      return {
+        ...state,
+        login: initialState.login,
+      };
+    
+    // Signup actions
+    case ActionType.SET_SIGNUP_NICKNAME:
+      return {
+        ...state,
+        signup: {
+          ...state.signup,
+          nickname: action.payload,
+          fieldErrors: {
+            ...state.signup.fieldErrors,
+            nickname: "", // 입력 시 에러 초기화
+          },
+        },
+      };
+    case ActionType.SET_SIGNUP_EMAIL:
+      return {
+        ...state,
+        signup: {
+          ...state.signup,
+          email: action.payload,
+          fieldErrors: {
+            ...state.signup.fieldErrors,
+            email: "", // 입력 시 에러 초기화
+          },
+        },
+      };
+    case ActionType.SET_SIGNUP_PASSWORD:
+      return {
+        ...state,
+        signup: {
+          ...state.signup,
+          password: action.payload,
+          fieldErrors: {
+            ...state.signup.fieldErrors,
+            password: "", // 입력 시 에러 초기화
+          },
+        },
+      };
+    case ActionType.SET_SIGNUP_CONFIRM_PASSWORD:
+      return {
+        ...state,
+        signup: {
+          ...state.signup,
+          confirmPassword: action.payload,
+          fieldErrors: {
+            ...state.signup.fieldErrors,
+            confirmPassword: "", // 입력 시 에러 초기화
+          },
+        },
+      };
+    case ActionType.SET_SIGNUP_ERROR:
+      return {
+        ...state,
+        signup: {
+          ...state.signup,
+          error: action.payload,
+        },
+      };
+    case ActionType.SET_SIGNUP_FIELD_ERROR:
+      return {
+        ...state,
+        signup: {
+          ...state.signup,
+          fieldErrors: {
+            ...state.signup.fieldErrors,
+            [action.payload.field]: action.payload.error,
+          },
+        },
+      };
+    case ActionType.SET_SIGNUP_FIELD_ERRORS:
+      return {
+        ...state,
+        signup: {
+          ...state.signup,
+          fieldErrors: action.payload,
+        },
+      };
+    case ActionType.SET_SIGNUP_SUBMITTING:
+      return {
+        ...state,
+        signup: {
+          ...state.signup,
+          isSubmitting: action.payload,
+        },
+      };
+    case ActionType.RESET_SIGNUP:
+      return {
+        ...state,
+        signup: initialState.signup,
+      };
+    
+    case ActionType.RESET_ALL:
+      return initialState;
+    
+    default:
+      return state;
+  }
+}
+
 export function AuthDialog({
   open,
   onClose,
@@ -25,62 +215,29 @@ export function AuthDialog({
   onSignup,
 }) {
   const router = useRouter();
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [signupNickname, setSignupNickname] = useState("");
-  const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
-  const [signupError, setSignupError] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [signupFieldErrors, setSignupFieldErrors] = useState({
-    nickname: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-
-  // 입력값 초기화 함수
-  const resetFormFields = () => {
-    setLoginEmail("");
-    setLoginPassword("");
-    setSignupEmail("");
-    setSignupPassword("");
-    setSignupNickname("");
-    setSignupConfirmPassword("");
-    setLoginError("");
-    setSignupError("");
-    setSignupFieldErrors({
-      nickname: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    });
-  };
+  const [state, dispatch] = useReducer(authReducer, initialState);
 
   // 창이 닫힐 때 입력값 초기화
   useEffect(() => {
     if (!open) {
-      resetFormFields();
+      dispatch({ type: ActionType.RESET_ALL });
     }
   }, [open]);
 
   // 탭 변경 핸들러
   const handleTabChange = (value) => {
-    resetFormFields();
+    dispatch({ type: ActionType.RESET_ALL });
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoginError("");
-    setIsLoginSubmitting(true);
+    dispatch({ type: ActionType.SET_LOGIN_ERROR, payload: "" });
+    dispatch({ type: ActionType.SET_LOGIN_SUBMITTING, payload: true });
 
     try {
       await login({
-        email: loginEmail,
-        password: loginPassword,
+        email: state.login.email,
+        password: state.login.password,
       });
 
       // 로그인 성공 후 사용자 정보 가져오기 (Spring Security 세션 기반)
@@ -96,17 +253,16 @@ export function AuthDialog({
           });
         } else if (onLogin) {
           // 사용자 정보 가져오기 실패 시 이메일만 전달
-          onLogin({ email: loginEmail });
+          onLogin({ email: state.login.email });
         }
       } catch (userError) {
         // 사용자 정보 가져오기 실패 시 이메일만 전달
         if (onLogin) {
-          onLogin({ email: loginEmail });
+          onLogin({ email: state.login.email });
         }
       }
 
-      setLoginEmail("");
-      setLoginPassword("");
+      dispatch({ type: ActionType.RESET_LOGIN });
       onClose();
       // 로그인 성공 시 쿼리 파라미터 없이 메인 페이지로 이동
       router.push("/");
@@ -125,63 +281,75 @@ export function AuthDialog({
         errorMessage = ErrorCode.INVALID_EMAIL_OR_PASSWORD;
       }
 
-      setLoginError(errorMessage);
+      dispatch({ type: ActionType.SET_LOGIN_ERROR, payload: errorMessage });
     } finally {
-      setIsLoginSubmitting(false);
+      dispatch({ type: ActionType.SET_LOGIN_SUBMITTING, payload: false });
     }
   };
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setSignupError("");
-    setSignupFieldErrors({
-      nickname: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
+    dispatch({ type: ActionType.SET_SIGNUP_ERROR, payload: "" });
+    dispatch({
+      type: ActionType.SET_SIGNUP_FIELD_ERRORS,
+      payload: {
+        nickname: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      },
     });
 
     // 닉네임 검증
-    if (!signupNickname || signupNickname.trim().length < 2) {
-      setSignupFieldErrors(prev => ({
-        ...prev,
-        nickname: ErrorCode.NICKNAME_LENGTH_VIOLATION,
-      }));
+    if (!state.signup.nickname || state.signup.nickname.trim().length < 2) {
+      dispatch({
+        type: ActionType.SET_SIGNUP_FIELD_ERROR,
+        payload: {
+          field: "nickname",
+          error: ErrorCode.NICKNAME_LENGTH_VIOLATION,
+        },
+      });
       return;
     }
 
     // 비밀번호 길이 검증
-    if (signupPassword.length < 8) {
-      setSignupFieldErrors(prev => ({
-        ...prev,
-        password: ErrorCode.PASSWORD_POLICY_VIOLATION,
-      }));
+    if (state.signup.password.length < 8) {
+      dispatch({
+        type: ActionType.SET_SIGNUP_FIELD_ERROR,
+        payload: {
+          field: "password",
+          error: ErrorCode.PASSWORD_POLICY_VIOLATION,
+        },
+      });
       return;
     }
 
-    if (signupPassword !== signupConfirmPassword) {
-      setSignupFieldErrors(prev => ({
-        ...prev,
-        confirmPassword: ErrorCode.PASSWORD_MISMATCH,
-      }));
+    if (state.signup.password !== state.signup.confirmPassword) {
+      dispatch({
+        type: ActionType.SET_SIGNUP_FIELD_ERROR,
+        payload: {
+          field: "confirmPassword",
+          error: ErrorCode.PASSWORD_MISMATCH,
+        },
+      });
       return;
     }
 
-    setIsSubmitting(true);
+    dispatch({ type: ActionType.SET_SIGNUP_SUBMITTING, payload: true });
 
     try {
       // 회원가입 요청
       await signup({
-        email: signupEmail,
-        password: signupPassword,
-        nickname: signupNickname,
+        email: state.signup.email,
+        password: state.signup.password,
+        nickname: state.signup.nickname,
       });
 
       // 회원가입 성공 후 자동 로그인하여 사용자 정보 가져오기
       try {
         await login({
-          email: signupEmail,
-          password: signupPassword,
+          email: state.signup.email,
+          password: state.signup.password,
         });
 
         // 로그인 성공 후 사용자 정보 가져오기
@@ -198,16 +366,16 @@ export function AuthDialog({
           } else if (onSignup) {
             // 사용자 정보 가져오기 실패 시 기본 정보만 전달
             onSignup({
-              email: signupEmail,
-              nickname: signupNickname,
+              email: state.signup.email,
+              nickname: state.signup.nickname,
             });
           }
         } catch (userError) {
           // 사용자 정보 가져오기 실패 시 기본 정보만 전달
           if (onSignup) {
             onSignup({
-              email: signupEmail,
-              nickname: signupNickname,
+              email: state.signup.email,
+              nickname: state.signup.nickname,
             });
           }
         }
@@ -215,22 +383,13 @@ export function AuthDialog({
         // 자동 로그인 실패 시 회원가입 정보만 전달
         if (onSignup) {
           onSignup({
-            email: signupEmail,
-            nickname: signupNickname,
+            email: state.signup.email,
+            nickname: state.signup.nickname,
           });
         }
       }
 
-      setSignupEmail("");
-      setSignupPassword("");
-      setSignupNickname("");
-      setSignupConfirmPassword("");
-      setSignupFieldErrors({
-        nickname: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
+      dispatch({ type: ActionType.RESET_SIGNUP });
       onClose();
       alert("회원가입이 완료되었습니다!");
       router.push("/");
@@ -239,25 +398,34 @@ export function AuthDialog({
       
       // 서버 에러를 개별 필드에 매핑
       if (isErrorCode(errorMessage, "DUPLICATE_EMAIL")) {
-        setSignupFieldErrors(prev => ({
-          ...prev,
-          email: errorMessage,
-        }));
+        dispatch({
+          type: ActionType.SET_SIGNUP_FIELD_ERROR,
+          payload: {
+            field: "email",
+            error: errorMessage,
+          },
+        });
       } else if (isErrorCode(errorMessage, "NICKNAME_DUPLICATED")) {
-        setSignupFieldErrors(prev => ({
-          ...prev,
-          nickname: errorMessage,
-        }));
+        dispatch({
+          type: ActionType.SET_SIGNUP_FIELD_ERROR,
+          payload: {
+            field: "nickname",
+            error: errorMessage,
+          },
+        });
       } else if (isErrorCode(errorMessage, "PASSWORD_POLICY_VIOLATION")) {
-        setSignupFieldErrors(prev => ({
-          ...prev,
-          password: errorMessage,
-        }));
+        dispatch({
+          type: ActionType.SET_SIGNUP_FIELD_ERROR,
+          payload: {
+            field: "password",
+            error: errorMessage,
+          },
+        });
       } else {
-        setSignupError(errorMessage);
+        dispatch({ type: ActionType.SET_SIGNUP_ERROR, payload: errorMessage });
       }
     } finally {
-      setIsSubmitting(false);
+      dispatch({ type: ActionType.SET_SIGNUP_SUBMITTING, payload: false });
     }
   };
 
@@ -283,10 +451,9 @@ export function AuthDialog({
                 <Input
                   id="login-email"
                   type="email"
-                  value={loginEmail}
+                  value={state.login.email}
                   onChange={(e) => {
-                    setLoginEmail(e.target.value);
-                    setLoginError("");
+                    dispatch({ type: ActionType.SET_LOGIN_EMAIL, payload: e.target.value });
                   }}
                   placeholder="example@email.com"
                   required
@@ -297,26 +464,25 @@ export function AuthDialog({
                 <Input
                   id="login-password"
                   type="password"
-                  value={loginPassword}
+                  value={state.login.password}
                   onChange={(e) => {
-                    setLoginPassword(e.target.value);
-                    setLoginError("");
+                    dispatch({ type: ActionType.SET_LOGIN_PASSWORD, payload: e.target.value });
                   }}
                   placeholder="비밀번호"
                   required
                 />
               </div>
-              {loginError && (
+              {state.login.error && (
                 <div className="text-red-500 text-sm">
-                  {loginError}
+                  {state.login.error}
                 </div>
               )}
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoginSubmitting}
+                disabled={state.login.isSubmitting}
               >
-                {isLoginSubmitting ? "로그인 중..." : "로그인"}
+                {state.login.isSubmitting ? "로그인 중..." : "로그인"}
               </Button>
             </form>
           </TabsContent>
@@ -327,17 +493,16 @@ export function AuthDialog({
                 <Label htmlFor="signup-nickname">닉네임</Label>
                 <Input
                   id="signup-nickname"
-                  value={signupNickname}
+                  value={state.signup.nickname}
                   onChange={(e) => {
-                    setSignupNickname(e.target.value);
-                    setSignupFieldErrors(prev => ({ ...prev, nickname: "" }));
+                    dispatch({ type: ActionType.SET_SIGNUP_NICKNAME, payload: e.target.value });
                   }}
                   placeholder="닉네임을 입력하세요"
                   required
-                  className={signupFieldErrors.nickname ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                  className={state.signup.fieldErrors.nickname ? 'border-red-500 focus-visible:ring-red-500' : ''}
                 />
-                {signupFieldErrors.nickname && (
-                  <p className="text-xs text-red-500 mt-1">{signupFieldErrors.nickname}</p>
+                {state.signup.fieldErrors.nickname && (
+                  <p className="text-xs text-red-500 mt-1">{state.signup.fieldErrors.nickname}</p>
                 )}
               </div>
               <div>
@@ -345,17 +510,16 @@ export function AuthDialog({
                 <Input
                   id="signup-email"
                   type="email"
-                  value={signupEmail}
+                  value={state.signup.email}
                   onChange={(e) => {
-                    setSignupEmail(e.target.value);
-                    setSignupFieldErrors(prev => ({ ...prev, email: "" }));
+                    dispatch({ type: ActionType.SET_SIGNUP_EMAIL, payload: e.target.value });
                   }}
                   placeholder="example@email.com"
                   required
-                  className={signupFieldErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                  className={state.signup.fieldErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}
                 />
-                {signupFieldErrors.email && (
-                  <p className="text-xs text-red-500 mt-1">{signupFieldErrors.email}</p>
+                {state.signup.fieldErrors.email && (
+                  <p className="text-xs text-red-500 mt-1">{state.signup.fieldErrors.email}</p>
                 )}
               </div>
               <div>
@@ -363,17 +527,16 @@ export function AuthDialog({
                 <Input
                   id="signup-password"
                   type="password"
-                  value={signupPassword}
+                  value={state.signup.password}
                   onChange={(e) => {
-                    setSignupPassword(e.target.value);
-                    setSignupFieldErrors(prev => ({ ...prev, password: "" }));
+                    dispatch({ type: ActionType.SET_SIGNUP_PASSWORD, payload: e.target.value });
                   }}
                   placeholder="8자 이상 입력하세요"
                   required
-                  className={signupFieldErrors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                  className={state.signup.fieldErrors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}
                 />
-                {signupFieldErrors.password && (
-                  <p className="text-xs text-red-500 mt-1">{signupFieldErrors.password}</p>
+                {state.signup.fieldErrors.password && (
+                  <p className="text-xs text-red-500 mt-1">{state.signup.fieldErrors.password}</p>
                 )}
               </div>
               <div>
@@ -381,21 +544,20 @@ export function AuthDialog({
                 <Input
                   id="signup-confirm-password"
                   type="password"
-                  value={signupConfirmPassword}
+                  value={state.signup.confirmPassword}
                   onChange={(e) => {
-                    setSignupConfirmPassword(e.target.value);
-                    setSignupFieldErrors(prev => ({ ...prev, confirmPassword: "" }));
+                    dispatch({ type: ActionType.SET_SIGNUP_CONFIRM_PASSWORD, payload: e.target.value });
                   }}
                   placeholder="비밀번호 확인"
                   required
-                  className={signupFieldErrors.confirmPassword ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                  className={state.signup.fieldErrors.confirmPassword ? 'border-red-500 focus-visible:ring-red-500' : ''}
                 />
-                {signupFieldErrors.confirmPassword && (
-                  <p className="text-xs text-red-500 mt-1">{signupFieldErrors.confirmPassword}</p>
+                {state.signup.fieldErrors.confirmPassword && (
+                  <p className="text-xs text-red-500 mt-1">{state.signup.fieldErrors.confirmPassword}</p>
                 )}
               </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "가입 중..." : "회원가입"}
+              <Button type="submit" className="w-full" disabled={state.signup.isSubmitting}>
+                {state.signup.isSubmitting ? "가입 중..." : "회원가입"}
               </Button>
             </form>
           </TabsContent>
