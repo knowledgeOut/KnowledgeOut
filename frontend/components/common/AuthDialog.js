@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,36 @@ export function AuthDialog({
     password: "",
     confirmPassword: "",
   });
+
+  // 입력값 초기화 함수
+  const resetFormFields = () => {
+    setLoginEmail("");
+    setLoginPassword("");
+    setSignupEmail("");
+    setSignupPassword("");
+    setSignupNickname("");
+    setSignupConfirmPassword("");
+    setLoginError("");
+    setSignupError("");
+    setSignupFieldErrors({
+      nickname: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
+  };
+
+  // 창이 닫힐 때 입력값 초기화
+  useEffect(() => {
+    if (!open) {
+      resetFormFields();
+    }
+  }, [open]);
+
+  // 탭 변경 핸들러
+  const handleTabChange = (value) => {
+    resetFormFields();
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -240,7 +270,7 @@ export function AuthDialog({
             로그인하거나 새 계정을 만들어보세요.
           </DialogDescription>
         </DialogHeader>
-        <Tabs defaultValue={defaultTab}>
+        <Tabs defaultValue={defaultTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">로그인</TabsTrigger>
             <TabsTrigger value="signup">회원가입</TabsTrigger>
