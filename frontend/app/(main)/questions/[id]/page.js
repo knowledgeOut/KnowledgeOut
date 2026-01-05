@@ -11,6 +11,7 @@ import {
   Check,
   X,
   ThumbsUp,
+  Tag,
 } from "lucide-react";
 
 // UI 구성 요소 (Shadcn UI 기준)
@@ -377,7 +378,7 @@ export default function QuestionDetailPage({ params }) {
         {/* 답변 영역 */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pt-4">
-            <MessageCircle className="w-6 h-6 text-indigo-500" />
+            <MessageCircle className="w-6 h-6 text-gray-900" />
             <h3 className="text-xl font-bold text-gray-900">
               답변 {question.answerCount || 0}개
             </h3>
@@ -430,7 +431,7 @@ export default function QuestionDetailPage({ params }) {
                       key={answer.id}
                       className={
                         isMyAnswer
-                          ? "border-indigo-100 bg-indigo-50/5 shadow-sm"
+                          ? "bg-white shadow-sm"
                           : "border-none shadow-sm"
                       }
                     >
@@ -446,7 +447,7 @@ export default function QuestionDetailPage({ params }) {
                             {isMyAnswer && (
                               <Badge
                                 variant="outline"
-                                className="text-[10px] text-indigo-600 bg-indigo-50 border-indigo-200 h-4"
+                                className="text-[12px] text-indigo-600 bg-indigo-50 border-indigo-200 h-5"
                               >
                                 내 답변
                               </Badge>
@@ -495,7 +496,10 @@ export default function QuestionDetailPage({ params }) {
                             />
                             {editingTags.length > 0 && (
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm text-gray-600">태그:</span>
+                                <span className="text-sm text-gray-600 flex items-center gap-1">
+                                  <Tag className="w-3 h-3" />
+                                  태그:
+                                </span>
                                 {editingTags.map((tag, idx) => (
                                   <Badge key={idx} variant="secondary" className="text-xs">
                                     #{tag}
@@ -532,6 +536,7 @@ export default function QuestionDetailPage({ params }) {
                             </div>
                             {answer.tagNames && answer.tagNames.length > 0 && (
                               <div className="flex items-center gap-2 flex-wrap pt-2 border-t">
+                                <Tag className="w-4 h-4 text-gray-500" />
                                 {answer.tagNames.map((tag, idx) => (
                                   <Badge key={idx} variant="secondary" className="text-xs">
                                     #{tag}
