@@ -1,21 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { signup, login } from "../../features/auth/api";
-import { getCurrentUser } from "../../features/member/api";
-import { useRouter } from "next/navigation";
-import { getErrorMessage, ErrorCode, isErrorCode } from "../../lib/errorCodes";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { signup, login } from "@/features/auth/api";
+import { getCurrentUser } from "@/features/member/api";
+import { getErrorMessage, ErrorCode, isErrorCode } from "@/lib/errorCodes";
 
 export function AuthDialog({
   open,

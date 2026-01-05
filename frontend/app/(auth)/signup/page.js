@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signup } from '../../../features/auth/api';
-import { Input } from '../../../components/ui/input';
-import { Button } from '../../../components/ui/button';
-import { getErrorMessage, ErrorCode, isErrorCode } from '../../../lib/errorCodes';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { signup } from '@/features/auth/api';
+import { getErrorMessage, ErrorCode, isErrorCode } from '@/lib/errorCodes';
 
 export default function SignupPage() {
     const router = useRouter();

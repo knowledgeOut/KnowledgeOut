@@ -1,11 +1,11 @@
 'use client';
 
-import { ArrowLeft, MessageCircle, Tag, ThumbsUp, Edit, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Separator } from '../ui/separator';
+import { ArrowLeft, MessageCircle, Tag, ThumbsUp, Edit, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { AnswerForm } from './AnswerForm';
 
 export function QuestionDetail({ question, onBack, onAddAnswer, onDeleteAnswer, onLike, isLiked, currentUser }) {

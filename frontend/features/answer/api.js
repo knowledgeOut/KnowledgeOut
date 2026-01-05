@@ -2,7 +2,7 @@
  * 답변 관련 API 함수
  */
 
-import apiClient from '../../lib/axios';
+import apiClient from '@/lib/axios';
 
 /**
  * 답변 목록 조회

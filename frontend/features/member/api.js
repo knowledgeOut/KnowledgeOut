@@ -6,7 +6,7 @@
  * 백엔드에서 SecurityContext에서 현재 로그인한 사용자 정보를 가져옵니다.
  */
 
-import apiClient from '../../lib/axios';
+import apiClient from '@/lib/axios';
 
 /**
  * 현재 로그인한 사용자 정보 조회 (선택적 인증)

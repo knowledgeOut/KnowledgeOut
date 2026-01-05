@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import * as memberApi from '../../../features/member/api';
+import * as memberApi from '@/features/member/api';
 import { getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
 import { MyPageUserInfoSection } from '@/components/common/MyPageUserInfoSection';
 import { MyPageActivityTabs } from '@/components/common/MyPageActivityTabs';
