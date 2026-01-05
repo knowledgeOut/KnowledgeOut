@@ -76,7 +76,7 @@ public class MemberService {
     }
 
     public List<QuestionResponseDto> getMyQuestions(Long memberId) {
-        return questionRepository.findByMemberIdOrderByCreatedAtDesc(memberId)
+        return questionRepository.findByMemberIdAndStatusFalseOrderByCreatedAtDesc(memberId)
                 .stream()
                 .map(question -> {
                     long likeCount = questionLikeRepository.countByQuestionId(question.getId());
