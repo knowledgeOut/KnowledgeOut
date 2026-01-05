@@ -71,7 +71,9 @@ export function AuthDialog({
       setLoginEmail("");
       setLoginPassword("");
       onClose();
+      // 로그인 성공 시 쿼리 파라미터 없이 메인 페이지로 이동
       router.push("/");
+      router.refresh();
     } catch (error) {
       // 로그인 실패 시 적절한 메시지로 변환
       let errorMessage = error.message || "로그인에 실패했습니다.";

@@ -66,7 +66,9 @@ export default function LoginPage() {
             await login(formData);
             // 로그인 성공 시 세션 쿠키(JSESSIONID)가 자동으로 저장됩니다
             // Spring Security 세션 기반 인증을 사용하므로 클라이언트에서 사용자 정보를 저장하지 않습니다
+            // 로그인 성공 시 쿼리 파라미터 없이 메인 페이지로 이동
             router.push('/');
+            router.refresh();
         } catch (error) {
             // 로그인 실패 시 적절한 메시지로 변환
             let errorMessage = error.message || '로그인에 실패했습니다.';

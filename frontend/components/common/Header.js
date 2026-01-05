@@ -1,66 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { User as UserIcon, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "@/components/common/AuthDialog";
-import { getCurrentUser } from "@/features/member/api";
-import { logout } from "@/features/auth/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const { currentUser, isCheckingAuth, login, signup, logout } = useAuth();
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authDialogTab, setAuthDialogTab] = useState("login");
 
-  // 로그인 상태 확인
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const userData = await getCurrentUser();
-        if (userData) {
-          setCurrentUser({
-            id: userData.id,
-            email: userData.email,
-            nickname: userData.nickname,
-            name: userData.nickname,
-            role: userData.role,
-          });
-        } else {
-          setCurrentUser(null);
-        }
-      } catch (error) {
-        setCurrentUser(null);
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
   const handleLogin = (user) => {
-    setCurrentUser(user);
+    login(user);
     setShowAuthDialog(false);
   };
 
   const handleSignup = (user) => {
-    setCurrentUser(user);
+    signup(user);
     setShowAuthDialog(false);
   };
 
   const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error("로그아웃 중 오류:", error);
-    } finally {
-      setCurrentUser(null);
-      // 홈으로 이동
-      router.push("/");
-    }
+    await logout();
+    // 홈으로 이동
+    router.push("/");
   };
 
   const handleMyPage = () => {
