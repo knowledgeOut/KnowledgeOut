@@ -328,32 +328,21 @@ export default function QuestionDetailPage({ params }) {
                 {question.content}
               </div>
 
-              {(isQuestionAuthor || isAdmin) && (
-                <div className="flex justify-end gap-2 pt-4 border-t">
-                  {question.answerCount === 0 ? (
-                    <>
-                      {isQuestionAuthor && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleEditQuestion}
-                          className="gap-2"
-                        >
-                          <Edit className="w-4 h-4" /> 수정
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleDeleteQuestion}
-                        className="gap-2 text-red-600 hover:bg-red-50 border-red-100"
-                      >
-                        <Trash2 className="w-4 h-4" /> 삭제
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      {isAdmin ? (
+              <div className="pt-4 border-t">
+                {question.answerCount === 0 ? (
+                  <>
+                    {(isQuestionAuthor || isAdmin) ? (
+                      <div className="flex justify-end gap-2">
+                        {isQuestionAuthor && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleEditQuestion}
+                            className="gap-2"
+                          >
+                            <Edit className="w-4 h-4" /> 수정
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -362,15 +351,34 @@ export default function QuestionDetailPage({ params }) {
                         >
                           <Trash2 className="w-4 h-4" /> 삭제
                         </Button>
-                      ) : (
-                        <p className="text-sm text-gray-500 italic">
-                          답변이 달린 질문은 수정 및 삭제가 불가합니다.
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        답변이 달린 질문은 수정 및 삭제가 불가합니다.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {isAdmin ? (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleDeleteQuestion}
+                          className="gap-2 text-red-600 hover:bg-red-50 border-red-100"
+                        >
+                          <Trash2 className="w-4 h-4" /> 삭제
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        답변이 달린 질문은 수정 및 삭제가 불가합니다.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -516,7 +524,7 @@ export default function QuestionDetailPage({ params }) {
                   );
                 })
               ) : (
-                <div className="text-center py-12 text-gray-400 text-sm italic border-2 border-dashed border-gray-100 rounded-lg">
+                <div className="text-center py-12 text-gray-400 text-sm border-2 border-dashed border-gray-100 rounded-lg">
                   아직 등록된 답변이 없습니다.
                 </div>
               )}
