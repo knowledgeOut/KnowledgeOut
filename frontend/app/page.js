@@ -1,17 +1,15 @@
 "use client";
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, User as UserIcon, ArrowLeft, LayoutDashboard } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Plus } from 'lucide-react';
 import { QuestionList } from '@/components/common/QuestionList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthDialog } from '@/components/common/AuthDialog';
-import { MyPageUserInfoSection } from '@/components/common/MyPageUserInfoSection';
-import { MyPageActivityTabs } from '@/components/common/MyPageActivityTabs';
-import { getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
+import { MyPageView } from '@/components/common/MyPageView';
 import { useQuestions } from '@/features/question/hooks';
 import { getCategories } from '@/features/category/api';
 import { getQuestionCounts } from '@/features/question/api';
@@ -41,13 +39,6 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(0);
   const [counts, setCounts] = useState({ totalCount: 0, pendingCount: 0, answeredCount: 0 });
   const pageSize = 10;
-
-  // 마이페이지 활동 데이터
-  const [myQuestions, setMyQuestions] = useState([]);
-  const [myAnswers, setMyAnswers] = useState([]);
-  const [myLikedQuestions, setMyLikedQuestions] = useState([]);
-  const [loadingActivity, setLoadingActivity] = useState(false);
-  const [activeTab, setActiveTab] = useState('questions');
 
   // API 파라미터 설정
   const apiParams = {
@@ -96,24 +87,6 @@ export default function Home() {
     }
   }, [searchParams, currentUser]);
 
-  // 마이페이지 표시/숨김 시 스크롤 초기화
-  useEffect(() => {
-    const resetScroll = () => {
-      window.scrollTo(0, 0);
-      if (document.documentElement) {
-        document.documentElement.scrollTop = 0;
-      }
-      if (document.body) {
-        document.body.scrollTop = 0;
-      }
-    };
-
-    resetScroll();
-    requestAnimationFrame(() => {
-      resetScroll();
-      setTimeout(resetScroll, 0);
-    });
-  }, [showMyPage]);
 
   // 카테고리 목록 조회
   useEffect(() => {
@@ -143,44 +116,6 @@ export default function Home() {
     fetchCounts();
   }, [selectedCategory, searchQuery]);
 
-  // 마이페이지 표시 시 활동 데이터 조회
-  useEffect(() => {
-    if (showMyPage && currentUser) {
-      const fetchActivityData = async () => {
-        try {
-          setLoadingActivity(true);
-          const [questionsData, answersData, likesData] = await Promise.all([
-            getMyQuestions(),
-            getMyAnswers(),
-            getMyQuestionLikes(),
-          ]);
-
-          setMyQuestions(questionsData || []);
-          setMyAnswers(answersData || []);
-          setMyLikedQuestions(likesData || []);
-        } catch (error) {
-          console.error('마이페이지 데이터를 불러오는데 실패했습니다:', error);
-
-          // 인증 에러인 경우 마이페이지를 닫고 로그인 상태 초기화
-          if (error.message?.includes('로그인') || error.response?.status === 401 || error.response?.status === 403) {
-            alert('로그인이 필요합니다. 마이페이지를 닫습니다.');
-            setShowMyPage(false);
-            setCurrentUser(null);
-            return;
-          }
-
-          // 기타 에러인 경우 빈 배열로 설정
-          setMyQuestions([]);
-          setMyAnswers([]);
-          setMyLikedQuestions([]);
-        } finally {
-          setLoadingActivity(false);
-        }
-      };
-
-      fetchActivityData();
-    }
-  }, [showMyPage, currentUser]);
 
   const handleLogin = (user) => {
     login(user);
@@ -192,6 +127,10 @@ export default function Home() {
 
   const handleLogout = async () => {
     await logout();
+    setShowMyPage(false);
+  };
+
+  const handleCloseMyPage = () => {
     setShowMyPage(false);
   };
 
@@ -228,48 +167,13 @@ export default function Home() {
   // 마이페이지 표시
   if (showMyPage && currentUser) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <Button
-            variant="ghost"
-            onClick={async () => {
-              setShowMyPage(false);
-              // 스크롤을 먼저 초기화
-              window.scrollTo(0, 0);
-              if (document.documentElement) {
-                document.documentElement.scrollTop = 0;
-              }
-              if (document.body) {
-                document.body.scrollTop = 0;
-              }
-              // 라우터 이동
-              router.push("/");
-              // 라우터 이동 후에도 스크롤 초기화
-              setTimeout(() => {
-                window.scrollTo(0, 0);
-              }, 0);
-            }}
-            className="gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            돌아가기
-          </Button>
-
-          <MyPageUserInfoSection user={currentUser} onLogout={handleLogout} />
-
-          <MyPageActivityTabs
-            myQuestions={myQuestions}
-            myAnswers={myAnswers}
-            likedQuestions={myLikedQuestions}
-            loading={loadingActivity}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            onSelectQuestion={handleSelectQuestion}
-            likedQuestionIds={likedQuestionIds}
-            onToggleLike={toggleQuestionLike}
-          />
-        </div>
-      </div>
+      <MyPageView
+        currentUser={currentUser}
+        likedQuestionIds={likedQuestionIds}
+        onToggleLike={toggleQuestionLike}
+        onLogout={handleLogout}
+        onClose={handleCloseMyPage}
+      />
     );
   }
 
