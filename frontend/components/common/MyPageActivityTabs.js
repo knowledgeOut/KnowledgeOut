@@ -3,8 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { FileText, MessageCircle, ThumbsUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { QuestionCard } from './QuestionCard';
 
 export function MyPageActivityTabs({ 
     myQuestions, 
@@ -61,39 +61,15 @@ export function MyPageActivityTabs({
                     </Card>
                 ) : (
                     myQuestions.map((question) => (
-                        <Card
+                        <QuestionCard
                             key={question.id}
-                            className="cursor-pointer hover:shadow-lg transition-shadow"
-                            onClick={() => handleQuestionClick(question.id)}
-                        >
-                            <CardHeader>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Badge variant={question.answerCount > 0 ? 'default' : 'secondary'}>
-                                        {question.answerCount > 0 ? '답변완료' : '미답변'}
-                                    </Badge>
-                                    {question.categoryName && (
-                                        <Badge variant="outline">{question.categoryName}</Badge>
-                                    )}
-                                </div>
-                                <CardTitle className="text-lg">{question.title}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-gray-600 line-clamp-2 mb-4">{question.content}</p>
-                                <div className="flex items-center justify-between text-sm text-gray-500">
-                                    <span>{new Date(question.createdAt).toLocaleDateString('ko-KR')}</span>
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center gap-1">
-                                            <ThumbsUp className="w-4 h-4" />
-                                            <span>{question.likeCount || 0}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <MessageCircle className="w-4 h-4" />
-                                            <span>{question.answerCount || 0}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                            question={question}
+                            onSelectQuestion={handleQuestionClick}
+                            enableLike={true}
+                            showViewCount={true}
+                            showMemberName={true}
+                            showTags={true}
+                        />
                     ))
                 )}
             </TabsContent>
@@ -138,39 +114,15 @@ export function MyPageActivityTabs({
                     </Card>
                 ) : (
                     likedQuestions.map((question) => (
-                        <Card
+                        <QuestionCard
                             key={question.id}
-                            className="cursor-pointer hover:shadow-lg transition-shadow"
-                            onClick={() => handleQuestionClick(question.id)}
-                        >
-                            <CardHeader>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Badge variant={question.answerCount > 0 ? 'default' : 'secondary'}>
-                                        {question.answerCount > 0 ? '답변완료' : '미답변'}
-                                    </Badge>
-                                    {question.categoryName && (
-                                        <Badge variant="outline">{question.categoryName}</Badge>
-                                    )}
-                                </div>
-                                <CardTitle className="text-lg">{question.title}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-gray-600 line-clamp-2 mb-4">{question.content}</p>
-                                <div className="flex items-center justify-between text-sm text-gray-500">
-                                    <span>{new Date(question.createdAt).toLocaleDateString('ko-KR')}</span>
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center gap-1">
-                                            <ThumbsUp className="w-4 h-4" />
-                                            <span>{question.likeCount || 0}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <MessageCircle className="w-4 h-4" />
-                                            <span>{question.answerCount || 0}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                            question={question}
+                            onSelectQuestion={handleQuestionClick}
+                            enableLike={true}
+                            showViewCount={true}
+                            showMemberName={true}
+                            showTags={true}
+                        />
                     ))
                 )}
             </TabsContent>
