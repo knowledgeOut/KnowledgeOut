@@ -11,10 +11,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthDialog } from '@/components/common/AuthDialog';
 import { MyPageUserInfoSection } from '@/components/common/MyPageUserInfoSection';
 import { MyPageActivityTabs } from '@/components/common/MyPageActivityTabs';
-import { getCurrentUser, getCurrentUserQuestionLikes, getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
+import { getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
 import { useQuestions } from '@/features/question/hooks';
 import { getCategories } from '@/features/category/api';
 import { getQuestionCounts } from '@/features/question/api';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Pagination,
   PaginationContent,
@@ -28,18 +29,15 @@ import {
 export default function Home() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { currentUser, isCheckingAuth, likedQuestionIds, login, signup, logout, toggleQuestionLike } = useAuth();
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [selectedStatus, setSelectedStatus] = useState('전체');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authDialogTab, setAuthDialogTab] = useState('login');
-  const [likedQuestionIds, setLikedQuestionIds] = useState(new Set());
-  const [currentUser, setCurrentUser] = useState(null);
   const [showMyPage, setShowMyPage] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [categories, setCategories] = useState([]);
-  const [selectedQuestionId, setSelectedQuestionId] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [counts, setCounts] = useState({ totalCount: 0, pendingCount: 0, answeredCount: 0 });
   const pageSize = 10;
@@ -63,49 +61,14 @@ export default function Home() {
   // 질문 목록 조회 훅 사용
   const { questions, loading, error, pageInfo, refetch } = useQuestions(apiParams);
 
-  // 페이지 로드 시 로그인 상태 확인 및 추천 목록 가져오기
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const userData = await getCurrentUser();
-        if (userData) {
-          setCurrentUser({
-            id: userData.id,
-            email: userData.email,
-            nickname: userData.nickname,
-            name: userData.nickname,
-            role: userData.role,
-          });
-          
-          // 로그인한 사용자의 추천한 질문 목록 가져오기
-          try {
-            const likedData = await getCurrentUserQuestionLikes();
-            const likedIds = new Set((likedData || []).map(q => String(q.id)));
-            setLikedQuestionIds(likedIds);
-          } catch (error) {
-            console.error('추천 목록 조회 실패:', error);
-            setLikedQuestionIds(new Set());
-          }
-        } else {
-          setCurrentUser(null);
-          setLikedQuestionIds(new Set());
-        }
-      } catch (error) {
-        setCurrentUser(null);
-        setLikedQuestionIds(new Set());
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
   // URL 쿼리 파라미터 확인하여 마이페이지 자동 표시
   useEffect(() => {
     const mypage = searchParams?.get('mypage');
     if (mypage === 'true' && currentUser) {
       setShowMyPage(true);
+    } else {
+      // 쿼리 파라미터가 없거나 'true'가 아니면 마이페이지 숨김
+      setShowMyPage(false);
     }
   }, [searchParams, currentUser]);
 
@@ -177,40 +140,16 @@ export default function Home() {
   }, [showMyPage, currentUser]);
 
   const handleLogin = (user) => {
-    setCurrentUser(user);
+    login(user);
   };
 
   const handleSignup = (user) => {
-    setCurrentUser(user);
+    signup(user);
   };
 
   const handleLogout = async () => {
-    try {
-      // 백엔드 로그아웃 API 호출 (세션 무효화)
-      const { logout } = await import('@/features/auth/api');
-      await logout();
-    } catch (error) {
-      console.error('로그아웃 중 오류:', error);
-      // 로그아웃 API 에러가 나도 로컬 상태는 초기화
-    } finally {
-      // 로컬 상태 초기화
-      setCurrentUser(null);
-      setShowMyPage(false);
-      setLikedQuestionIds(new Set());
-    }
-  };
-
-  // 추천 상태 토글 함수
-  const toggleQuestionLike = (questionId) => {
-    setLikedQuestionIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(String(questionId))) {
-        newSet.delete(String(questionId));
-      } else {
-        newSet.add(String(questionId));
-      }
-      return newSet;
-    });
+    await logout();
+    setShowMyPage(false);
   };
 
   // 카테고리나 검색어 변경 시 첫 페이지로 이동
@@ -239,15 +178,6 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-gray-600">로딩 중...</div>
-      </div>
-    );
-  }
-
-  // 질문 상세 정보 로딩 중
-  if (selectedQuestionId && loadingQuestionDetail && !selectedQuestion) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">질문 정보를 불러오는 중...</div>
       </div>
     );
   }
