@@ -30,8 +30,14 @@ public class QuestionResponseDto {
     private List<String> tagNames;
     
     private List<AnswerResponseDto> answers; // 답변 목록
+    
+    private long likeCount; // 추천 수
 
     public static QuestionResponseDto fromEntity(Question question) {
+        return fromEntity(question, 0);
+    }
+    
+    public static QuestionResponseDto fromEntity(Question question, long likeCount) {
         // 답변 목록을 생성일시 기준 오름차순으로 정렬하여 변환 (soft delete 필터링)
         List<AnswerResponseDto> answers = question.getAnswers().stream()
                 .filter(org.example.backend.domain.answer.Answer::isNotDeleted) // 삭제되지 않은 답변만
@@ -59,7 +65,9 @@ public class QuestionResponseDto {
                         .map(qt -> qt.getTag().getName())
                         .collect(Collectors.toList()),
                 // 답변 목록
-                answers
+                answers,
+                // 추천 수
+                likeCount
         );
     }
 }

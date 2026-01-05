@@ -71,4 +71,12 @@ public class QuestionController {
         questionService.deleteQuestion(user.getUsername(), id);
         return ResponseEntity.ok().build();
     }
+    
+    @PostMapping("/{id}/likes")
+    public ResponseEntity<Long> toggleQuestionLike(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id) {
+        long likeCount = questionService.toggleQuestionLike(id, user.getUsername());
+        return ResponseEntity.ok(likeCount);
+    }
 }
