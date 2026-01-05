@@ -14,7 +14,8 @@ export default function MyPagePage() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
+
+
     // 활동 데이터 상태
     const [myQuestions, setMyQuestions] = useState([]);
     const [myAnswers, setMyAnswers] = useState([]);
@@ -81,6 +82,10 @@ export default function MyPagePage() {
         router.back();
     };
 
+    const handleLogout = () => {
+        handleLogoutApi();
+    };
+
     const handleSelectQuestion = (questionId) => {
         router.push(`/questions/${questionId}`);
     };
@@ -117,9 +122,9 @@ export default function MyPagePage() {
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-4xl mx-auto space-y-6">
                 <Button variant="ghost" onClick={handleBack} className="gap-2 mb-6">
-                        <ArrowLeft className="w-4 h-4" />
-                        돌아가기
-                    </Button>
+                    <ArrowLeft className="w-4 h-4" />
+                    돌아가기
+                </Button>
 
                 <MyPageUserInfoSection user={user} />
 

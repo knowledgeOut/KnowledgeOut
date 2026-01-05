@@ -74,7 +74,10 @@ public class MemberService {
     public List<QuestionResponseDto> getMyQuestions(Long memberId) {
         return questionRepository.findByMemberIdOrderByCreatedAtDesc(memberId)
                 .stream()
-                .map(QuestionResponseDto::fromEntity)
+                .map(question -> {
+                    long likeCount = questionLikeRepository.countByQuestionId(question.getId());
+                    return QuestionResponseDto.fromEntity(question, likeCount);
+                })
                 .toList();
     }
 
@@ -88,7 +91,10 @@ public class MemberService {
     public List<QuestionResponseDto> getMyLikedQuestions(Long memberId) {
         return questionLikeRepository.findByMemberId(memberId)
                 .stream()
-                .map(like -> QuestionResponseDto.fromEntity(like.getQuestion()))
+                .map(like -> {
+                    long likeCount = questionLikeRepository.countByQuestionId(like.getQuestion().getId());
+                    return QuestionResponseDto.fromEntity(like.getQuestion(), likeCount);
+                })
                 .toList();
     }
 

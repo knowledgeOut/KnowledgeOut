@@ -8,8 +8,10 @@ import org.example.backend.domain.question.QuestionTag;
 import org.example.backend.domain.tag.Tag;
 import org.example.backend.dto.request.QuestionRequestDto;
 import org.example.backend.dto.response.QuestionResponseDto;
+import org.example.backend.domain.question.QuestionLike;
 import org.example.backend.repository.CategoryRepository;
 import org.example.backend.repository.MemberRepository;
+import org.example.backend.repository.QuestionLikeRepository;
 import org.example.backend.repository.QuestionRepository;
 import org.example.backend.repository.QuestionSpecification; // 추가
 import org.springframework.data.domain.Page;
@@ -27,6 +29,7 @@ public class QuestionService {
     private final MemberRepository memberRepository;
     private final CategoryRepository categoryRepository;
     private final TagService tagService;
+    private final QuestionLikeRepository questionLikeRepository;
 
     // 질문 등록
     @Transactional
@@ -69,16 +72,22 @@ public class QuestionService {
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 질문입니다."));
 
-        // 3. DTO 변환 (Lazy Loading 발생 지점)
+        // 3. 좋아요 수 조회
+        long likeCount = questionLikeRepository.countByQuestionId(id);
+        
+        // 4. DTO 변환 (Lazy Loading 발생 지점)
         // @Transactional 안에서 실행되므로 Member, Tags, Category 등을 안전하게 가져옵니다.
-        return QuestionResponseDto.fromEntity(question);
+        return QuestionResponseDto.fromEntity(question, likeCount);
     }
 
     // 질문 목록 조회 (검색 조건 적용)
     public Page<QuestionResponseDto> getQuestions(Pageable pageable, String category, String tag, String status, String search) {
         Specification<Question> spec = createSpecification(category, tag, status, search);
         return questionRepository.findAll(spec, pageable)
-                .map(QuestionResponseDto::fromEntity);
+                .map(question -> {
+                    long likeCount = questionLikeRepository.countByQuestionId(question.getId());
+                    return QuestionResponseDto.fromEntity(question, likeCount);
+                });
     }
 
     // 질문 개수 조회
@@ -159,7 +168,33 @@ public class QuestionService {
             }
         }
 
-        return QuestionResponseDto.fromEntity(question);
+        long likeCount = questionLikeRepository.countByQuestionId(questionId);
+        return QuestionResponseDto.fromEntity(question, likeCount);
+    }
+
+    // 질문 추천 토글
+    @Transactional
+    public long toggleQuestionLike(Long questionId, String userEmail) {
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 질문입니다."));
+        
+        Member member = memberRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+        
+        // 이미 좋아요가 있는지 확인
+        var existingLike = questionLikeRepository.findByQuestionIdAndMemberId(questionId, member.getId());
+        
+        if (existingLike.isPresent()) {
+            // 좋아요 취소
+            questionLikeRepository.delete(existingLike.get());
+        } else {
+            // 좋아요 추가
+            QuestionLike questionLike = new QuestionLike(member, question);
+            questionLikeRepository.save(questionLike);
+        }
+        
+        // 현재 좋아요 수 반환
+        return questionLikeRepository.countByQuestionId(questionId);
     }
 
     @Transactional
@@ -167,16 +202,32 @@ public class QuestionService {
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 질문입니다."));
 
-        if (!question.getMember().getEmail().equals(email)) {
+        // 현재 사용자 조회
+        Member currentMember = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        // 관리자가 아니고 작성자도 아닌 경우 삭제 권한 없음
+        boolean isAdmin = currentMember.getRole() == org.example.backend.domain.member.Role.ROLE_ADMIN;
+        boolean isAuthor = question.getMember().getEmail().equals(email);
+        
+        if (!isAdmin && !isAuthor) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
 
-        // 답변 중 status가 false인 답변이 있으면 삭제 불가
-        boolean hasActiveAnswer = question.getAnswers().stream()
-                .anyMatch(answer -> answer.isNotDeleted()); // status가 false인 답변이 있는지 확인
+        // 관리자가 아닌 경우에만 답변 체크
+        if (!isAdmin) {
+            // 답변 중 status가 false인 답변이 있으면 삭제 불가
+            boolean hasActiveAnswer = question.getAnswers().stream()
+                    .anyMatch(answer -> answer.isNotDeleted()); // status가 false인 답변이 있는지 확인
 
-        if (hasActiveAnswer) {
-            throw new IllegalStateException("삭제되지 않은 답변이 있는 질문은 삭제할 수 없습니다.");
+            if (hasActiveAnswer) {
+                throw new IllegalStateException("삭제되지 않은 답변이 있는 질문은 삭제할 수 없습니다.");
+            }
+        } else {
+            // 관리자인 경우 질문에 작성된 모든 답변도 함께 삭제 처리
+            question.getAnswers().stream()
+                    .filter(answer -> answer.isNotDeleted()) // 삭제되지 않은 답변만
+                    .forEach(answer -> answer.delete()); // soft delete 수행
         }
 
         // 소프트 삭제: status를 true로 설정
