@@ -10,6 +10,7 @@ import {
   Trash2,
   Check,
   X,
+  ThumbsUp,
 } from "lucide-react";
 
 // UI 구성 요소 (Shadcn UI 기준)
@@ -22,14 +23,14 @@ import { Textarea } from "@/components/ui/textarea";
 // 공통 컴포넌트 및 API 기능
 import { AnswerForm } from "@/components/common/AnswerForm";
 import { useQuestion } from "@/features/question/hooks";
-import { deleteQuestion } from "@/features/question/api";
+import { deleteQuestion, likeQuestion } from "@/features/question/api";
 import {
   getAnswers,
   createAnswer,
   deleteAnswer,
   updateAnswer,
 } from "@/features/answer/api";
-import { getMyPage } from "@/features/member/api";
+import { getMyPage, getMyQuestionLikes } from "@/features/member/api";
 
 export default function QuestionDetailPage({ params }) {
   // Next.js 15: params는 Promise이므로 use()를 통해 언래핑
@@ -47,6 +48,8 @@ export default function QuestionDetailPage({ params }) {
   const [loadingAnswers, setLoadingAnswers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [likedQuestionIds, setLikedQuestionIds] = useState(new Set());
+  const [likeCount, setLikeCount] = useState(0);
 
   // 답변 수정 관련 상태
   const [editingAnswerId, setEditingAnswerId] = useState(null);
@@ -56,7 +59,7 @@ export default function QuestionDetailPage({ params }) {
   // 사용자 ID 추출 헬퍼 함수
   const getUserId = (user) => user?.id || user?.memberId;
 
-  // 1. 로그인 사용자 정보 조회
+  // 1. 로그인 사용자 정보 조회 및 추천 목록 가져오기
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -65,12 +68,24 @@ export default function QuestionDetailPage({ params }) {
         // API 응답 구조에 따라 id 또는 memberId 확인
         if (userData && getUserId(userData)) {
           setCurrentUser(userData);
+          
+          // 추천한 질문 목록 가져오기
+          try {
+            const likedData = await getMyQuestionLikes();
+            const likedIds = new Set((likedData || []).map(q => String(q.id)));
+            setLikedQuestionIds(likedIds);
+          } catch (error) {
+            console.error('추천 목록 조회 실패:', error);
+            setLikedQuestionIds(new Set());
+          }
         } else {
           setCurrentUser(null);
+          setLikedQuestionIds(new Set());
         }
       } catch (err) {
         console.error("인증 확인 중 오류 발생:", err);
         setCurrentUser(null);
+        setLikedQuestionIds(new Set());
       } finally {
         setIsAuthChecking(false);
       }
@@ -96,6 +111,42 @@ export default function QuestionDetailPage({ params }) {
   useEffect(() => {
     fetchAnswers();
   }, [id]);
+
+  // 질문 데이터가 로드되면 likeCount 초기화
+  useEffect(() => {
+    if (question) {
+      setLikeCount(question.likeCount || 0);
+    }
+  }, [question]);
+
+  // 추천 버튼 클릭 핸들러
+  const handleLikeClick = async () => {
+    if (!currentUser) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    
+    try {
+      const newLikeCount = await likeQuestion(id);
+      setLikeCount(newLikeCount);
+      
+      // 추천 상태 토글
+      setLikedQuestionIds(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(String(id))) {
+          newSet.delete(String(id));
+        } else {
+          newSet.add(String(id));
+        }
+        return newSet;
+      });
+    } catch (error) {
+      console.error('추천 처리 중 오류:', error);
+      alert(error.message || '추천 처리에 실패했습니다.');
+    }
+  };
+
+  const isLiked = likedQuestionIds.has(String(id));
 
   /** 질문 수정/삭제 핸들러 */
   const handleEditQuestion = () => router.push(`/questions/${id}/edit`);
@@ -259,6 +310,13 @@ export default function QuestionDetailPage({ params }) {
                     <Eye className="w-4 h-4" />
                     {question.viewCount || 0}
                   </span>
+                  <button
+                    onClick={handleLikeClick}
+                    className="flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors"
+                  >
+                    <ThumbsUp className={`w-4 h-4 ${isLiked ? 'fill-gray-200' : ''}`} />
+                    {likeCount || question.likeCount || 0}
+                  </button>
                   <span className="flex items-center gap-1">
                     <MessageCircle className="w-4 h-4" />
                     {question.answerCount || 0}

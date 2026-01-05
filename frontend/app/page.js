@@ -33,7 +33,7 @@ export default function Home() {
   const [selectedStatus, setSelectedStatus] = useState('전체');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authDialogTab, setAuthDialogTab] = useState('login');
-  const [likedQuestions, setLikedQuestions] = useState(new Set());
+  const [likedQuestionIds, setLikedQuestionIds] = useState(new Set());
   const [currentUser, setCurrentUser] = useState(null);
   const [showMyPage, setShowMyPage] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -62,7 +62,7 @@ export default function Home() {
   // 질문 목록 조회 훅 사용
   const { questions, loading, error, pageInfo, refetch } = useQuestions(apiParams);
 
-  // 페이지 로드 시 로그인 상태 확인
+  // 페이지 로드 시 로그인 상태 확인 및 추천 목록 가져오기
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -74,8 +74,19 @@ export default function Home() {
           name: userData.nickname,
           role: userData.role,
         });
+        
+        // 로그인한 사용자의 추천한 질문 목록 가져오기
+        try {
+          const likedData = await getMyQuestionLikes();
+          const likedIds = new Set((likedData || []).map(q => String(q.id)));
+          setLikedQuestionIds(likedIds);
+        } catch (error) {
+          console.error('추천 목록 조회 실패:', error);
+          setLikedQuestionIds(new Set());
+        }
       } catch (error) {
         setCurrentUser(null);
+        setLikedQuestionIds(new Set());
       } finally {
         setIsCheckingAuth(false);
       }
@@ -171,8 +182,21 @@ export default function Home() {
       // 로컬 상태 초기화
       setCurrentUser(null);
       setShowMyPage(false);
-      setLikedQuestions(new Set());
+      setLikedQuestionIds(new Set());
     }
+  };
+
+  // 추천 상태 토글 함수
+  const toggleQuestionLike = (questionId) => {
+    setLikedQuestionIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(String(questionId))) {
+        newSet.delete(String(questionId));
+      } else {
+        newSet.add(String(questionId));
+      }
+      return newSet;
+    });
   };
 
   // 카테고리나 검색어 변경 시 첫 페이지로 이동
@@ -234,6 +258,8 @@ export default function Home() {
             activeTab={activeTab}
             onTabChange={setActiveTab}
             onSelectQuestion={handleSelectQuestion}
+            likedQuestionIds={likedQuestionIds}
+            onToggleLike={toggleQuestionLike}
           />
         </div>
       </div>
@@ -391,18 +417,24 @@ export default function Home() {
               <QuestionList
                 questions={filteredQuestions}
                 onSelectQuestion={handleSelectQuestion}
+                likedQuestionIds={likedQuestionIds}
+                onToggleLike={toggleQuestionLike}
               />
             </TabsContent>
             <TabsContent value="pending">
               <QuestionList
                 questions={filteredQuestions}
                 onSelectQuestion={handleSelectQuestion}
+                likedQuestionIds={likedQuestionIds}
+                onToggleLike={toggleQuestionLike}
               />
             </TabsContent>
             <TabsContent value="answered">
               <QuestionList
                 questions={filteredQuestions}
                 onSelectQuestion={handleSelectQuestion}
+                likedQuestionIds={likedQuestionIds}
+                onToggleLike={toggleQuestionLike}
               />
             </TabsContent>
           </Tabs>

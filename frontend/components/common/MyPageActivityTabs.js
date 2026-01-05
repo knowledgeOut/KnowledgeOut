@@ -13,7 +13,9 @@ export function MyPageActivityTabs({
     loading, 
     activeTab, 
     onTabChange,
-    onSelectQuestion 
+    onSelectQuestion,
+    likedQuestionIds = new Set(),
+    onToggleLike
 }) {
     const router = useRouter();
 
@@ -69,6 +71,8 @@ export function MyPageActivityTabs({
                             showViewCount={true}
                             showMemberName={true}
                             showTags={true}
+                            likedQuestionIds={likedQuestionIds}
+                            onToggleLike={onToggleLike}
                         />
                     ))
                 )}
@@ -122,6 +126,8 @@ export function MyPageActivityTabs({
                             showViewCount={true}
                             showMemberName={true}
                             showTags={true}
+                            likedQuestionIds={likedQuestionIds}
+                            onToggleLike={onToggleLike}
                         />
                     ))
                 )}

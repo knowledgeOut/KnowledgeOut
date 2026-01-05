@@ -14,6 +14,8 @@ import { likeQuestion } from '@/features/question/api';
  * @param {boolean} showViewCount - 조회수 표시 여부 (기본값: true)
  * @param {boolean} showMemberName - 작성자명 표시 여부 (기본값: true)
  * @param {boolean} showTags - 태그 표시 여부 (기본값: true)
+ * @param {Set} likedQuestionIds - 추천한 질문 ID Set
+ * @param {Function} onToggleLike - 추천 상태 토글 함수
  */
 export function QuestionCard({ 
     question, 
@@ -21,10 +23,14 @@ export function QuestionCard({
     enableLike = true,
     showViewCount = true,
     showMemberName = true,
-    showTags = true
+    showTags = true,
+    likedQuestionIds = new Set(),
+    onToggleLike
 }) {
     const [likeCount, setLikeCount] = useState(question.likeCount || question.like || 0);
-    const [isLiked, setIsLiked] = useState(false);
+    
+    // likedQuestionIds에서 현재 질문이 추천되었는지 확인
+    const isLiked = likedQuestionIds.has(String(question.id));
 
     // question prop이 변경될 때 likeCount 업데이트
     useEffect(() => {
@@ -43,7 +49,11 @@ export function QuestionCard({
         try {
             const newLikeCount = await likeQuestion(question.id);
             setLikeCount(newLikeCount);
-            setIsLiked(prev => !prev);
+            
+            // 전역 상태 업데이트
+            if (onToggleLike) {
+                onToggleLike(question.id);
+            }
         } catch (error) {
             console.error('추천 처리 중 오류:', error);
             alert(error.message || '추천 처리에 실패했습니다.');
