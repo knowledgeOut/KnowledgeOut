@@ -31,8 +31,9 @@ import {
   deleteAnswer,
   updateAnswer,
 } from "@/features/answer/api";
-import { getCurrentUser, getCurrentUserQuestionLikes } from "@/features/member/api";
+import { getCurrentUser } from "@/features/member/api";
 import { getUserDisplayName } from "@/utils/user";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function QuestionDetailPage({ params }) {
   // Next.js 15: params는 Promise이므로 use()를 통해 언래핑
@@ -50,8 +51,10 @@ export default function QuestionDetailPage({ params }) {
   const [loadingAnswers, setLoadingAnswers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [likedQuestionIds, setLikedQuestionIds] = useState(new Set());
   const [likeCount, setLikeCount] = useState(0);
+  
+  // 전역 상태에서 추천 목록 가져오기
+  const { likedQuestionIds, toggleQuestionLike } = useAuth();
 
   // 답변 수정 관련 상태
   const [editingAnswerId, setEditingAnswerId] = useState(null);
@@ -62,7 +65,7 @@ export default function QuestionDetailPage({ params }) {
   // 사용자 ID 추출 헬퍼 함수
   const getUserId = (user) => user?.id || user?.memberId;
 
-  // 1. 로그인 사용자 정보 조회 및 추천 목록 가져오기
+  // 1. 로그인 사용자 정보 조회
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -71,24 +74,12 @@ export default function QuestionDetailPage({ params }) {
         // API 응답 구조에 따라 id 또는 memberId 확인
         if (userData && getUserId(userData)) {
           setCurrentUser(userData);
-          
-          // 추천한 질문 목록 가져오기
-          try {
-            const likedData = await getCurrentUserQuestionLikes();
-            const likedIds = new Set((likedData || []).map(q => String(q.id)));
-            setLikedQuestionIds(likedIds);
-          } catch (error) {
-            console.error('추천 목록 조회 실패:', error);
-            setLikedQuestionIds(new Set());
-          }
         } else {
           setCurrentUser(null);
-          setLikedQuestionIds(new Set());
         }
       } catch (err) {
         console.error("인증 확인 중 오류 발생:", err);
         setCurrentUser(null);
-        setLikedQuestionIds(new Set());
       } finally {
         setIsAuthChecking(false);
       }
@@ -133,16 +124,8 @@ export default function QuestionDetailPage({ params }) {
       const newLikeCount = await likeQuestion(id);
       setLikeCount(newLikeCount);
       
-      // 추천 상태 토글
-      setLikedQuestionIds(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(String(id))) {
-          newSet.delete(String(id));
-        } else {
-          newSet.add(String(id));
-        }
-        return newSet;
-      });
+      // 전역 상태에서 추천 상태 토글
+      toggleQuestionLike(id);
     } catch (error) {
       console.error('추천 처리 중 오류:', error);
       alert(error.message || '추천 처리에 실패했습니다.');

@@ -127,9 +127,6 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 클라이언트 측 필터링 제거 (백엔드에서 이미 처리됨)
-  const filteredQuestions = questions;
-
   const categoryOptions = ['전체', ...categories.map(c => c.name)];
 
   // 질문 선택 시 상세 페이지로 이동
@@ -248,7 +245,7 @@ export default function Home() {
             </TabsList>
             <TabsContent value="전체">
               <QuestionList
-                questions={filteredQuestions}
+                questions={questions}
                 onSelectQuestion={handleSelectQuestion}
                 likedQuestionIds={likedQuestionIds}
                 onToggleLike={toggleQuestionLike}
@@ -256,7 +253,7 @@ export default function Home() {
             </TabsContent>
             <TabsContent value="pending">
               <QuestionList
-                questions={filteredQuestions}
+                questions={questions}
                 onSelectQuestion={handleSelectQuestion}
                 likedQuestionIds={likedQuestionIds}
                 onToggleLike={toggleQuestionLike}
@@ -264,7 +261,7 @@ export default function Home() {
             </TabsContent>
             <TabsContent value="answered">
               <QuestionList
-                questions={filteredQuestions}
+                questions={questions}
                 onSelectQuestion={handleSelectQuestion}
                 likedQuestionIds={likedQuestionIds}
                 onToggleLike={toggleQuestionLike}

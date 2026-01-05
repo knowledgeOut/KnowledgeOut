@@ -8,6 +8,7 @@ import * as memberApi from '@/features/member/api';
 import { getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
 import { MyPageUserInfoSection } from '@/components/common/MyPageUserInfoSection';
 import { MyPageActivityTabs } from '@/components/common/MyPageActivityTabs';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function MyPagePage() {
     const router = useRouter();
@@ -21,7 +22,9 @@ export default function MyPagePage() {
     const [likedQuestions, setLikedQuestions] = useState([]);
     const [loadingActivity, setLoadingActivity] = useState(true);
     const [activeTab, setActiveTab] = useState('questions');
-    const [likedQuestionIds, setLikedQuestionIds] = useState(new Set());
+    
+    // 전역 상태에서 추천 목록 가져오기
+    const { likedQuestionIds, toggleQuestionLike } = useAuth();
 
     useEffect(() => {
         fetchUserData();
@@ -62,10 +65,6 @@ export default function MyPagePage() {
             setMyQuestions(questionsData || []);
             setMyAnswers(answersData || []);
             setLikedQuestions(likesData || []);
-            
-            // 추천한 질문 ID Set 생성
-            const likedIds = new Set((likesData || []).map(q => String(q.id)));
-            setLikedQuestionIds(likedIds);
         } catch (error) {
             console.error('마이페이지 데이터를 불러오는데 실패했습니다:', error);
             
@@ -82,18 +81,6 @@ export default function MyPagePage() {
         }
     };
 
-    // 추천 상태 토글 함수
-    const toggleQuestionLike = (questionId) => {
-        setLikedQuestionIds(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(String(questionId))) {
-                newSet.delete(String(questionId));
-            } else {
-                newSet.add(String(questionId));
-            }
-            return newSet;
-        });
-    };
 
     const handleBack = () => {
         router.back();
