@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { signup, login } from "../../features/auth/api";
 import { getCurrentUser } from "../../features/member/api";
 import { useRouter } from "next/navigation";
+import { getErrorMessage, ErrorCode, isErrorCode } from "../../lib/errorCodes";
 
 export function AuthDialog({
   open,
@@ -34,6 +35,12 @@ export function AuthDialog({
   const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
   const [signupError, setSignupError] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [signupFieldErrors, setSignupFieldErrors] = useState({
+    nickname: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -75,16 +82,17 @@ export function AuthDialog({
       router.push("/");
       router.refresh();
     } catch (error) {
-      // 로그인 실패 시 적절한 메시지로 변환
-      let errorMessage = error.message || "로그인에 실패했습니다.";
+      // ErrorCode를 사용하여 일관된 에러 메시지 처리
+      let errorMessage = getErrorMessage(error.message);
 
-      // "로그인이 필요합니다." 또는 로그인 관련 에러인 경우 메시지 변경
+      // 로그인 관련 에러인 경우 통일된 메시지로 변환
       if (
-        errorMessage.includes("로그인이 필요합니다") ||
-        errorMessage.includes("로그인") ||
+        isErrorCode(errorMessage, "LOGIN_REQUIRED") ||
+        isErrorCode(errorMessage, "AUTHENTICATION_FAILED") ||
+        isErrorCode(errorMessage, "INVALID_EMAIL_OR_PASSWORD") ||
         (error.response && error.response.status === 401)
       ) {
-        errorMessage = "이메일 또는 비밀번호를 확인해 주세요.";
+        errorMessage = ErrorCode.INVALID_EMAIL_OR_PASSWORD;
       }
 
       setLoginError(errorMessage);
@@ -96,15 +104,36 @@ export function AuthDialog({
   const handleSignup = async (e) => {
     e.preventDefault();
     setSignupError("");
+    setSignupFieldErrors({
+      nickname: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
+
+    // 닉네임 검증
+    if (!signupNickname || signupNickname.trim().length < 2) {
+      setSignupFieldErrors(prev => ({
+        ...prev,
+        nickname: ErrorCode.NICKNAME_LENGTH_VIOLATION,
+      }));
+      return;
+    }
 
     // 비밀번호 길이 검증
     if (signupPassword.length < 8) {
-      setSignupError("비밀번호는 8자 이상이어야 합니다.");
+      setSignupFieldErrors(prev => ({
+        ...prev,
+        password: ErrorCode.PASSWORD_POLICY_VIOLATION,
+      }));
       return;
     }
 
     if (signupPassword !== signupConfirmPassword) {
-      setSignupError("비밀번호가 일치하지 않습니다.");
+      setSignupFieldErrors(prev => ({
+        ...prev,
+        confirmPassword: ErrorCode.PASSWORD_MISMATCH,
+      }));
       return;
     }
 
@@ -166,11 +195,37 @@ export function AuthDialog({
       setSignupPassword("");
       setSignupNickname("");
       setSignupConfirmPassword("");
+      setSignupFieldErrors({
+        nickname: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
       onClose();
       alert("회원가입이 완료되었습니다!");
       router.push("/");
     } catch (error) {
-      setSignupError(error.message || "회원가입에 실패했습니다.");
+      const errorMessage = getErrorMessage(error.message);
+      
+      // 서버 에러를 개별 필드에 매핑
+      if (isErrorCode(errorMessage, "DUPLICATE_EMAIL")) {
+        setSignupFieldErrors(prev => ({
+          ...prev,
+          email: errorMessage,
+        }));
+      } else if (isErrorCode(errorMessage, "NICKNAME_DUPLICATED")) {
+        setSignupFieldErrors(prev => ({
+          ...prev,
+          nickname: errorMessage,
+        }));
+      } else if (isErrorCode(errorMessage, "PASSWORD_POLICY_VIOLATION")) {
+        setSignupFieldErrors(prev => ({
+          ...prev,
+          password: errorMessage,
+        }));
+      } else {
+        setSignupError(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -193,18 +248,16 @@ export function AuthDialog({
 
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-4 pt-4">
-              {loginError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-                  {loginError}
-                </div>
-              )}
               <div>
                 <Label htmlFor="login-email">이메일</Label>
                 <Input
                   id="login-email"
                   type="email"
                   value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
+                  onChange={(e) => {
+                    setLoginEmail(e.target.value);
+                    setLoginError("");
+                  }}
                   placeholder="example@email.com"
                   required
                 />
@@ -215,11 +268,19 @@ export function AuthDialog({
                   id="login-password"
                   type="password"
                   value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
+                  onChange={(e) => {
+                    setLoginPassword(e.target.value);
+                    setLoginError("");
+                  }}
                   placeholder="비밀번호"
                   required
                 />
               </div>
+              {loginError && (
+                <div className="text-red-500 text-sm">
+                  {loginError}
+                </div>
+              )}
               <Button
                 type="submit"
                 className="w-full"
@@ -242,10 +303,17 @@ export function AuthDialog({
                 <Input
                   id="signup-nickname"
                   value={signupNickname}
-                  onChange={(e) => setSignupNickname(e.target.value)}
+                  onChange={(e) => {
+                    setSignupNickname(e.target.value);
+                    setSignupFieldErrors(prev => ({ ...prev, nickname: "" }));
+                  }}
                   placeholder="닉네임을 입력하세요"
                   required
+                  className={signupFieldErrors.nickname ? 'border-red-500 focus-visible:ring-red-500' : ''}
                 />
+                {signupFieldErrors.nickname && (
+                  <p className="text-xs text-red-500 mt-1">{signupFieldErrors.nickname}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="signup-email">이메일</Label>
@@ -253,10 +321,17 @@ export function AuthDialog({
                   id="signup-email"
                   type="email"
                   value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
+                  onChange={(e) => {
+                    setSignupEmail(e.target.value);
+                    setSignupFieldErrors(prev => ({ ...prev, email: "" }));
+                  }}
                   placeholder="example@email.com"
                   required
+                  className={signupFieldErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}
                 />
+                {signupFieldErrors.email && (
+                  <p className="text-xs text-red-500 mt-1">{signupFieldErrors.email}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="signup-password">비밀번호</Label>
@@ -264,10 +339,17 @@ export function AuthDialog({
                   id="signup-password"
                   type="password"
                   value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
+                  onChange={(e) => {
+                    setSignupPassword(e.target.value);
+                    setSignupFieldErrors(prev => ({ ...prev, password: "" }));
+                  }}
                   placeholder="8자 이상 입력하세요"
                   required
+                  className={signupFieldErrors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}
                 />
+                {signupFieldErrors.password && (
+                  <p className="text-xs text-red-500 mt-1">{signupFieldErrors.password}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="signup-confirm-password">비밀번호 확인</Label>
@@ -275,10 +357,17 @@ export function AuthDialog({
                   id="signup-confirm-password"
                   type="password"
                   value={signupConfirmPassword}
-                  onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                  onChange={(e) => {
+                    setSignupConfirmPassword(e.target.value);
+                    setSignupFieldErrors(prev => ({ ...prev, confirmPassword: "" }));
+                  }}
                   placeholder="비밀번호 확인"
                   required
+                  className={signupFieldErrors.confirmPassword ? 'border-red-500 focus-visible:ring-red-500' : ''}
                 />
+                {signupFieldErrors.confirmPassword && (
+                  <p className="text-xs text-red-500 mt-1">{signupFieldErrors.confirmPassword}</p>
+                )}
               </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? "가입 중..." : "회원가입"}

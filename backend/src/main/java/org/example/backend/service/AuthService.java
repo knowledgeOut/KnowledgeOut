@@ -3,6 +3,8 @@ package org.example.backend.service;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.domain.member.Member;
 import org.example.backend.dto.request.MemberRequestDto;
+import org.example.backend.exception.BusinessException;
+import org.example.backend.exception.ErrorCode;
 import org.example.backend.repository.MemberRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,15 +22,15 @@ public class AuthService {
     public Long signup(MemberRequestDto request) {
         // 1. 비밀번호 길이 검증 (8자 이상)
         if (request.getPassword() == null || request.getPassword().length() < 8) {
-            throw new IllegalArgumentException("비밀번호는 8자 이상이어야 합니다.");
+            throw new BusinessException(ErrorCode.PASSWORD_POLICY_VIOLATION);
         }
 
         // 2. 중복 검사
         if (memberRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("이미 가입된 이메일입니다.");
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
         if (memberRepository.existsByNickname(request.getNickname())) {
-            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+            throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
         }
 
         // 3. 비밀번호 암호화
