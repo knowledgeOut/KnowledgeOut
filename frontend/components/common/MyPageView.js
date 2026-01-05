@@ -76,8 +76,8 @@ export function MyPageView({ currentUser, likedQuestionIds, onToggleLike, onLogo
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="page-container-padded">
+      <div className="container-narrow-spaced">
         <Button
           variant="ghost"
           onClick={handleBack}

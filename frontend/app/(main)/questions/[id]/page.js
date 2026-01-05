@@ -227,7 +227,7 @@ export default function QuestionDetailPage({ params }) {
     );
   if (error || !question)
     return (
-      <div className="min-h-screen p-10 text-center space-y-4">
+      <div className="error-container">
         <p className="text-red-500 font-medium">
           {error || "질문을 찾을 수 없습니다."}
         </p>
@@ -243,8 +243,8 @@ export default function QuestionDetailPage({ params }) {
   const status = question.answerCount > 0 ? "answered" : "pending";
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="page-container-padded">
+      <div className="container-narrow-spaced">
         <Button
           variant="ghost"
           onClick={handleBack}

@@ -92,7 +92,7 @@ export default function MyPagePage() {
 
     if (loading && !user) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="loading-container">
                 <div className="text-gray-600">로딩 중...</div>
             </div>
         );
@@ -100,7 +100,7 @@ export default function MyPagePage() {
 
     if (error && !user) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="loading-container">
                 <div className="bg-white p-6 rounded-lg shadow-md max-w-md w-full">
                     <div className="text-red-600 mb-4">{error}</div>
                     <button
@@ -119,8 +119,8 @@ export default function MyPagePage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="max-w-4xl mx-auto space-y-6">
+        <div className="page-container-padded">
+            <div className="container-narrow-spaced">
                 <Button variant="ghost" onClick={handleBack} className="gap-2 mb-6">
                     <ArrowLeft className="w-4 h-4" />
                     돌아가기

@@ -137,7 +137,7 @@ export default function Home() {
   // 인증 상태 확인 중이면 로딩 표시
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="loading-container">
         <div className="text-gray-600">로딩 중...</div>
       </div>
     );
@@ -157,8 +157,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="page-container">
+      <div className="container-wide-padded">
         <div className="mb-6 flex gap-4 flex-wrap items-center">
           <div className="flex-1 min-w-[300px] relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

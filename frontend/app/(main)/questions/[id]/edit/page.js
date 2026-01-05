@@ -147,7 +147,7 @@ export default function EditQuestionPage({ params }) {
 
   if (loadingQuestion || loadingUser || loadingCategories) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="loading-container">
         <div className="text-gray-600">로딩 중...</div>
       </div>
     );
@@ -155,8 +155,8 @@ export default function EditQuestionPage({ params }) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="page-container-padded">
+        <div className="container-narrow">
           <Button
             variant="ghost"
             onClick={() => router.push(`/questions/${id}`)}
@@ -172,8 +172,8 @@ export default function EditQuestionPage({ params }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="page-container-padded">
+      <div className="container-narrow">
         <Button variant="ghost" onClick={handleCancel} className="gap-2 mb-4">
           <ArrowLeft className="w-4 h-4" />
           돌아가기

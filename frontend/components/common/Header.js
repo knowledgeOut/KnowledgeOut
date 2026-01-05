@@ -37,7 +37,7 @@ export function Header() {
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b bg-white shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4">
+        <div className="container-header">
           <div className="flex items-center justify-between">
             <div
               className="cursor-pointer"
