@@ -46,7 +46,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 1. CSRF 비활성화 (중복 제거)
+                // 1. CSRF 비활성화
                 .csrf(AbstractHttpConfigurer::disable)
 
                 // 2. CORS 설정 적용
@@ -54,8 +54,6 @@ public class SecurityConfig {
 
                 // 3. 세션 관리 정책
                 .sessionManagement(session ->
-                        // session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                        // JWT 필터 구현시 해당 코드 지우고 STATELESS로 테스트 진행 필요
                         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                 // 4. URL 권한 설정
