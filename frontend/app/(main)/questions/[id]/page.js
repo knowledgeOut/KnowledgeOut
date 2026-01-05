@@ -54,6 +54,7 @@ export default function QuestionDetailPage({ params }) {
   // 답변 수정 관련 상태
   const [editingAnswerId, setEditingAnswerId] = useState(null);
   const [editingContent, setEditingContent] = useState("");
+  const [editingTags, setEditingTags] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // 사용자 ID 추출 헬퍼 함수
@@ -169,7 +170,7 @@ export default function QuestionDetailPage({ params }) {
   };
 
   /** 답변 등록/수정/삭제 핸들러 */
-  const handleAddAnswer = async (content) => {
+  const handleAddAnswer = async (content, author, tags) => {
     // currentUser 상태 재검증
     if (!currentUser || !getUserId(currentUser)) {
       alert("로그인이 필요합니다. 다시 로그인해 주세요.");
@@ -179,7 +180,7 @@ export default function QuestionDetailPage({ params }) {
     try {
       setIsSubmitting(true);
       setSubmitError(null);
-      await createAnswer(id, { content });
+      await createAnswer(id, { content, tagNames: tags || [] });
       await fetchAnswers();
       // 전체 카운트 갱신을 위해 페이지 새로고침 (혹은 상태 업데이트)
       window.location.reload();
@@ -197,6 +198,7 @@ export default function QuestionDetailPage({ params }) {
   const handleStartEditAnswer = (answer) => {
     setEditingAnswerId(answer.id);
     setEditingContent(answer.content || "");
+    setEditingTags(answer.tagNames || []);
   };
 
   const handleSaveEditAnswer = async (answerId) => {
@@ -206,10 +208,11 @@ export default function QuestionDetailPage({ params }) {
     }
     try {
       setIsUpdating(true);
-      await updateAnswer(id, answerId, { content: editingContent.trim() });
+      await updateAnswer(id, answerId, { content: editingContent.trim(), tagNames: editingTags || [] });
       await fetchAnswers();
       setEditingAnswerId(null);
       setEditingContent("");
+      setEditingTags([]);
     } catch (err) {
       alert(err.message || "수정에 실패했습니다.");
     } finally {
@@ -489,17 +492,37 @@ export default function QuestionDetailPage({ params }) {
                           <div className="space-y-3">
                             <Textarea
                               value={editingContent}
-                              onChange={(e) =>
-                                setEditingContent(e.target.value)
-                              }
+                              onChange={(e) => {
+                                setEditingContent(e.target.value);
+                                // 태그 자동 추출
+                                const tagRegex = /#(\S+)/g;
+                                const matches = e.target.value.match(tagRegex);
+                                if (matches) {
+                                  setEditingTags(matches.map(tag => tag.substring(1)));
+                                }
+                              }}
                               rows={5}
                               className="focus-visible:ring-indigo-500 text-base border-indigo-200"
+                              placeholder="답변을 수정하세요. 태그는 #태그이름 형식으로 입력하세요."
                             />
+                            {editingTags.length > 0 && (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm text-gray-600">태그:</span>
+                                {editingTags.map((tag, idx) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    #{tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
                             <div className="flex justify-end gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setEditingAnswerId(null)}
+                                onClick={() => {
+                                  setEditingAnswerId(null);
+                                  setEditingTags([]);
+                                }}
                               >
                                 취소
                               </Button>
@@ -515,8 +538,19 @@ export default function QuestionDetailPage({ params }) {
                             </div>
                           </div>
                         ) : (
-                          <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">
-                            {answer.content}
+                          <div className="space-y-3">
+                            <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">
+                              {answer.content}
+                            </div>
+                            {answer.tagNames && answer.tagNames.length > 0 && (
+                              <div className="flex items-center gap-2 flex-wrap pt-2 border-t">
+                                {answer.tagNames.map((tag, idx) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    #{tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                       </CardContent>

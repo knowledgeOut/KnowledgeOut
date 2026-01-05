@@ -2,13 +2,16 @@ package org.example.backend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.backend.domain.answer.Answer;
+import org.example.backend.domain.answer.AnswerTag;
 import org.example.backend.domain.member.Member;
 import org.example.backend.domain.question.Question;
+import org.example.backend.domain.tag.Tag;
 import org.example.backend.dto.request.AnswerRequestDto;
 import org.example.backend.dto.response.AnswerResponseDto;
 import org.example.backend.repository.AnswerRepository;
 import org.example.backend.repository.MemberRepository;
 import org.example.backend.repository.QuestionRepository;
+import org.example.backend.service.TagService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,12 +25,23 @@ public class AnswerService {
     private final AnswerRepository answerRepository;
     private final QuestionRepository questionRepository;
     private final MemberRepository memberRepository;
+    private final TagService tagService;
 
     @Transactional
     public Long addAnswer(String userEmail, Long questionId, AnswerRequestDto request) {
         Member member = memberRepository.findByEmail(userEmail).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
         Question question = questionRepository.findById(questionId).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 질문입니다."));
         Answer answer = new Answer(request.getContent(), question, member);
+
+        // 태그 처리
+        if (request.getTagNames() != null) {
+            for (String tagName : request.getTagNames()) {
+                Tag tag = tagService.findOrCreateTag(tagName);
+                AnswerTag answerTag = new AnswerTag();
+                answerTag.setTag(tag);
+                answer.addAnswerTag(answerTag);
+            }
+        }
 
         return answerRepository.save(answer).getId();
     }
@@ -56,6 +70,17 @@ public class AnswerService {
         }
         
         answer.update(request.getContent());
+
+        // 태그 업데이트
+        if (request.getTagNames() != null) {
+            answer.getAnswerTags().clear(); // 기존 연관관계 제거
+            for (String tagName : request.getTagNames()) {
+                Tag tag = tagService.findOrCreateTag(tagName);
+                AnswerTag answerTag = new AnswerTag();
+                answerTag.setTag(tag);
+                answer.addAnswerTag(answerTag);
+            }
+        }
     }
 
     @Transactional

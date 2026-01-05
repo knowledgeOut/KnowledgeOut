@@ -10,6 +10,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -44,12 +46,22 @@ public class Answer {
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private boolean status = false;
 
+    // 1:N 관계 - 태그 (중간 테이블 AnswerTag 활용)
+    @OneToMany(mappedBy = "answer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AnswerTag> answerTags = new ArrayList<>();
+
     // 생성자 및 편의 메서드는 필요 시 추가
     public Answer(String content, Question question, Member member) {
         this.content = content;
         this.question = question;
         this.member = member;
         this.status = false;
+    }
+
+    // 연관관계 편의 메서드
+    public void addAnswerTag(AnswerTag answerTag) {
+        this.answerTags.add(answerTag);
+        answerTag.setAnswer(this);
     }
 
     // 답변 수정 메서드
