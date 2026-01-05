@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, User as UserIcon, ArrowLeft, LayoutDashboard } from 'lucide-react';
 import { QuestionList } from '@/components/common/QuestionList';
@@ -27,6 +27,7 @@ import {
 
 export default function Home() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('전체');
@@ -94,6 +95,14 @@ export default function Home() {
 
     checkAuth();
   }, []);
+
+  // URL 쿼리 파라미터 확인하여 마이페이지 자동 표시
+  useEffect(() => {
+    const mypage = searchParams?.get('mypage');
+    if (mypage === 'true' && currentUser) {
+      setShowMyPage(true);
+    }
+  }, [searchParams, currentUser]);
 
   // 카테고리 목록 조회
   useEffect(() => {
@@ -243,7 +252,14 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto space-y-6">
-          <Button variant="ghost" onClick={() => setShowMyPage(false)} className="gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowMyPage(false);
+              router.push("/");
+            }}
+            className="gap-2"
+          >
             <ArrowLeft className="w-4 h-4" />
             돌아가기
           </Button>
@@ -268,66 +284,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl mb-2">질의응답 게시판</h1>
-              <p className="text-gray-600">궁금한 점을 자유롭게 질문하고 답변을 나눠보세요</p>
-            </div>
-            <div className="flex gap-3">
-              {currentUser ? (
-                <>
-                  <span className="flex items-center gap-2 text-gray-700">
-                    <UserIcon className="w-4 h-4" />
-                    {(!currentUser.name || currentUser.name.startsWith('deletedUser_') ? '탈퇴한 사용자' : currentUser.name)}님
-                  </span>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowMyPage(true)}
-                  >
-                    마이페이지
-                  </Button>
-                  {currentUser.role === 'ROLE_ADMIN' && (
-                    <Button
-                      variant="outline"
-                      onClick={() => router.push('/admin/dashboard')}
-                      className="gap-2"
-                    >
-                      <LayoutDashboard className="w-4 h-4" />
-                      대시보드
-                    </Button>
-                  )}
-                  <Button variant="outline" onClick={handleLogout}>
-                    로그아웃
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setAuthDialogTab('login');
-                      setShowAuthDialog(true);
-                    }}
-                  >
-                    로그인
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setAuthDialogTab('signup');
-                      setShowAuthDialog(true);
-                    }}
-                  >
-                    회원가입
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-6 flex gap-4 flex-wrap items-center">
           <div className="flex-1 min-w-[300px] relative">
