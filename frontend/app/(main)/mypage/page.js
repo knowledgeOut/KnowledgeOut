@@ -15,6 +15,7 @@ export default function MyPagePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+
     // 활동 데이터 상태
     const [myQuestions, setMyQuestions] = useState([]);
     const [myAnswers, setMyAnswers] = useState([]);
@@ -79,6 +80,10 @@ export default function MyPagePage() {
 
     const handleBack = () => {
         router.back();
+    };
+
+    const handleLogout = () => {
+        handleLogoutApi();
     };
 
     const handleSelectQuestion = (questionId) => {
