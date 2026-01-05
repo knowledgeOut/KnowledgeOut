@@ -91,7 +91,7 @@ export function MyPageUserInfoSection({ user, onLogout }) {
             setIsEditDialogOpen(false);
             setPasswordError('');
             setNicknameError('');
-            
+
             // 비밀번호가 변경된 경우 로그아웃
             if (passwordChanged) {
                 if (onLogout) {
@@ -105,7 +105,7 @@ export function MyPageUserInfoSection({ user, onLogout }) {
         } catch (error) {
             // ErrorCode를 사용하여 일관된 에러 메시지 처리
             const errorMessage = getErrorMessage(error.message);
-            
+
             // 비밀번호 변경 시도 시 발생한 에러인 경우 비밀번호 입력창에 표시
             if (passwordChanged && (
                 isErrorCode(errorMessage, 'PASSWORD_POLICY_VIOLATION') ||
@@ -119,14 +119,14 @@ export function MyPageUserInfoSection({ user, onLogout }) {
                     password: '',
                     confirmPassword: '',
                 });
-            } 
+            }
             // 닉네임 변경 시도 시 발생한 에러인 경우 닉네임 입력창에 표시
             else if (nicknameChanged && (
                 isErrorCode(errorMessage, 'NICKNAME_LENGTH_VIOLATION') ||
                 isErrorCode(errorMessage, 'NICKNAME_DUPLICATED')
             )) {
                 setNicknameError(errorMessage);
-            } 
+            }
             else {
                 alert(errorMessage);
             }
