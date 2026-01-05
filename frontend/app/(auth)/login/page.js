@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { login } from '../../../features/auth/api';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
+import { getErrorMessage, ErrorCode, isErrorCode } from '../../../lib/errorCodes';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -70,14 +71,17 @@ export default function LoginPage() {
             router.push('/');
             router.refresh();
         } catch (error) {
-            // 로그인 실패 시 적절한 메시지로 변환
-            let errorMessage = error.message || '로그인에 실패했습니다.';
-            
-            // "로그인이 필요합니다." 또는 로그인 관련 에러인 경우 메시지 변경
-            if (errorMessage.includes('로그인이 필요합니다') || 
-                errorMessage.includes('로그인') ||
-                (error.response && error.response.status === 401)) {
-                errorMessage = '이메일 또는 비밀번호를 확인해 주세요.';
+            // ErrorCode를 사용하여 일관된 에러 메시지 처리
+            let errorMessage = getErrorMessage(error.message);
+
+            // 로그인 관련 에러인 경우 통일된 메시지로 변환
+            if (
+                isErrorCode(errorMessage, 'LOGIN_REQUIRED') ||
+                isErrorCode(errorMessage, 'AUTHENTICATION_FAILED') ||
+                isErrorCode(errorMessage, 'INVALID_EMAIL_OR_PASSWORD') ||
+                (error.response && error.response.status === 401)
+            ) {
+                errorMessage = ErrorCode.INVALID_EMAIL_OR_PASSWORD;
             }
             
             setSubmitError(errorMessage);
@@ -101,12 +105,6 @@ export default function LoginPage() {
                     </p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    {submitError && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                            {submitError}
-                        </div>
-                    )}
-
                     <div className="space-y-4">
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -120,7 +118,6 @@ export default function LoginPage() {
                                 required
                                 value={formData.email}
                                 onChange={handleChange}
-                                className={errors.email ? 'border-red-500' : ''}
                                 placeholder="example@email.com"
                             />
                             {errors.email && (
@@ -140,7 +137,6 @@ export default function LoginPage() {
                                 required
                                 value={formData.password}
                                 onChange={handleChange}
-                                className={errors.password ? 'border-red-500' : ''}
                                 placeholder="비밀번호를 입력하세요"
                             />
                             {errors.password && (
@@ -148,6 +144,12 @@ export default function LoginPage() {
                             )}
                         </div>
                     </div>
+
+                    {submitError && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                            {submitError}
+                        </div>
+                    )}
 
                     <div>
                         <Button
