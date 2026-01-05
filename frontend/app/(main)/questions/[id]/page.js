@@ -32,6 +32,7 @@ import {
   updateAnswer,
 } from "@/features/answer/api";
 import { getCurrentUser, getCurrentUserQuestionLikes } from "@/features/member/api";
+import { getUserDisplayName } from "@/utils/user";
 
 export default function QuestionDetailPage({ params }) {
   // Next.js 15: params는 Promise이므로 use()를 통해 언래핑
@@ -303,7 +304,7 @@ export default function QuestionDetailPage({ params }) {
               <div className="flex items-center justify-between text-sm text-gray-500">
                 <div className="flex gap-4">
                   <span className="font-semibold text-gray-700">
-                    {!question.memberNickname || question.memberNickname.startsWith('deletedUser_') ? '탈퇴한 사용자' : question.memberNickname}
+                    {getUserDisplayName(question.memberNickname)}
                   </span>
                   <span>
                     {new Date(question.createdAt).toLocaleString("ko-KR")}
@@ -439,7 +440,7 @@ export default function QuestionDetailPage({ params }) {
                         <div className="flex justify-between items-center mb-4">
                           <div className="flex items-center gap-3 text-sm">
                             <span className="font-bold text-gray-800">
-                              {!answer.memberNickname || answer.memberNickname.startsWith('deletedUser_') ? '탈퇴한 사용자' : answer.memberNickname}
+                              {getUserDisplayName(answer.memberNickname)}
                             </span>
                             <span className="text-gray-400">
                               {new Date(answer.createdAt).toLocaleString()}

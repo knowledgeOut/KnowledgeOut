@@ -14,6 +14,7 @@ import { useQuestions } from '@/features/question/hooks';
 import { getCategories } from '@/features/category/api';
 import { getQuestionCounts } from '@/features/question/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { resetScrollWithAnimation } from '@/utils/scroll';
 import {
   Pagination,
   PaginationContent,
@@ -54,26 +55,7 @@ export default function Home() {
 
   // 페이지 로드 시 스크롤을 맨 위로 이동
   useEffect(() => {
-    // 여러 방법으로 스크롤 초기화 (브라우저 호환성)
-    const resetScroll = () => {
-      window.scrollTo(0, 0);
-      if (document.documentElement) {
-        document.documentElement.scrollTop = 0;
-      }
-      if (document.body) {
-        document.body.scrollTop = 0;
-      }
-    };
-
-    // 즉시 실행
-    resetScroll();
-    
-    // 다음 프레임에서도 실행 (레이아웃 완료 후)
-    requestAnimationFrame(() => {
-      resetScroll();
-      // 한 번 더 실행 (모든 리소스 로드 후)
-      setTimeout(resetScroll, 0);
-    });
+    resetScrollWithAnimation();
   }, []);
 
   // URL 쿼리 파라미터 확인하여 마이페이지 자동 표시

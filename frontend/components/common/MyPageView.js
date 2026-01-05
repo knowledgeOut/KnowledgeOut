@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { MyPageUserInfoSection } from './MyPageUserInfoSection';
 import { MyPageActivityTabs } from './MyPageActivityTabs';
 import { getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
+import { resetScroll } from '@/utils/scroll';
 
 export function MyPageView({ currentUser, likedQuestionIds, onToggleLike, onLogout, onClose }) {
   const router = useRouter();
@@ -65,18 +66,12 @@ export function MyPageView({ currentUser, likedQuestionIds, onToggleLike, onLogo
       onClose();
     }
     // 스크롤을 먼저 초기화
-    window.scrollTo(0, 0);
-    if (document.documentElement) {
-      document.documentElement.scrollTop = 0;
-    }
-    if (document.body) {
-      document.body.scrollTop = 0;
-    }
+    resetScroll();
     // 라우터 이동
     router.push("/");
     // 라우터 이동 후에도 스크롤 초기화
     setTimeout(() => {
-      window.scrollTo(0, 0);
+      resetScroll();
     }, 0);
   };
 

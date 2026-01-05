@@ -5,6 +5,7 @@ import { MessageCircle, Eye, ThumbsUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { likeQuestion } from '@/features/question/api';
+import { getUserDisplayName } from '@/utils/user';
 
 /**
  * 질문 카드 컴포넌트
@@ -97,9 +98,7 @@ export function QuestionCard({
                     <div className="flex items-center gap-4">
                         {showMemberName && (
                             <span>
-                                {!question.memberNickname || question.memberNickname.startsWith('deletedUser_') 
-                                    ? '탈퇴한 사용자' 
-                                    : question.memberNickname}
+                                {getUserDisplayName(question.memberNickname)}
                             </span>
                         )}
                         <span>{new Date(question.createdAt).toLocaleDateString('ko-KR')}</span>

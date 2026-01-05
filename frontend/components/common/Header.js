@@ -6,6 +6,7 @@ import { User as UserIcon, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "@/components/common/AuthDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { getUserDisplayName } from "@/utils/user";
 
 export function Header() {
   const router = useRouter();
@@ -56,11 +57,7 @@ export function Header() {
                 <>
                   <span className="flex items-center gap-2 text-gray-700 text-sm">
                     <UserIcon className="w-4 h-4" />
-                    {(!currentUser.name ||
-                    currentUser.name.startsWith("deletedUser_")
-                      ? "탈퇴한 사용자"
-                      : currentUser.name)}
-                    님
+                    {getUserDisplayName(currentUser.name)}님
                   </span>
                   <Button
                     variant="outline"

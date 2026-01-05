@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { createQuestion } from '@/features/question/api';
 import { getCurrentUser } from '@/features/member/api';
 import { getCategories } from '@/features/category/api';
+import { extractTagsFromContent } from '@/utils/tags';
 
 export default function NewQuestionPage() {
     const router = useRouter();
@@ -69,13 +70,6 @@ export default function NewQuestionPage() {
         fetchUser();
         fetchCategories();
     }, [router]);
-
-    const extractTagsFromContent = (text) => {
-        const tagRegex = /#(\S+)/g;
-        const matches = text.match(tagRegex);
-        if (!matches) return [];
-        return matches.map(tag => tag.substring(1));
-    };
 
     const handleContentChange = (e) => {
         const newContent = e.target.value;

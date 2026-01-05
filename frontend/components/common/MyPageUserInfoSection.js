@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import * as authApi from '@/features/auth/api';
 import { updateMember, withdraw } from '@/features/member/api';
 import { getErrorMessage, ErrorCode, isErrorCode } from '@/lib/errorCodes';
+import { getUserDisplayName } from '@/utils/user';
 
 export function MyPageUserInfoSection({ user, onLogout }) {
     const router = useRouter();
@@ -312,10 +313,7 @@ export function MyPageUserInfoSection({ user, onLogout }) {
                     <div className="flex items-center gap-3">
                         <User className="w-4 h-4 text-gray-500" />
                         <span className="text-gray-500 w-16">닉네임</span>
-                        <span className="font-medium">{(() => {
-                            const nickname = user.nickname || user.name;
-                            return !nickname || nickname.startsWith('deletedUser_') ? '탈퇴한 사용자' : nickname;
-                        })()}</span>
+                        <span className="font-medium">{getUserDisplayName(user.nickname || user.name)}</span>
                     </div>
                     <Separator />
                     <div className="flex items-center gap-3">

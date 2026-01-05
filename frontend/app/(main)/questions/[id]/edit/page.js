@@ -19,6 +19,7 @@ import {
 import { getQuestion, updateQuestion } from "@/features/question/api";
 import { getCurrentUser } from "@/features/member/api";
 import { getCategories } from "@/features/category/api";
+import { extractTagsFromContent } from "@/utils/tags";
 
 export default function EditQuestionPage({ params }) {
   // Next.js 15: params는 Promise이므로 use()로 unwrap
@@ -95,13 +96,6 @@ export default function EditQuestionPage({ params }) {
     fetchUser();
     fetchCategories();
   }, [id, router]);
-
-  const extractTagsFromContent = (text) => {
-    const tagRegex = /#(\S+)/g;
-    const matches = text.match(tagRegex);
-    if (!matches) return [];
-    return matches.map((tag) => tag.substring(1));
-  };
 
   const handleContentChange = (e) => {
     const newContent = e.target.value;
