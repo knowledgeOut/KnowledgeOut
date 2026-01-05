@@ -120,12 +120,6 @@ export default function SignupPage() {
                     </p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    {submitError && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                            {submitError}
-                        </div>
-                    )}
-
                     <div className="space-y-4">
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">

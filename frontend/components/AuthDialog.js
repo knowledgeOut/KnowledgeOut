@@ -116,11 +116,6 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
           
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-4 pt-4">
-              {loginError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-                  {loginError}
-                </div>
-              )}
               <div>
                 <Label htmlFor="login-email">이메일</Label>
                 <Input
@@ -151,11 +146,6 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
 
           <TabsContent value="signup">
             <form onSubmit={handleSignup} className="space-y-4 pt-4">
-              {signupError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-                  {signupError}
-                </div>
-              )}
               <div>
                 <Label htmlFor="signup-nickname">닉네임</Label>
                 <Input
