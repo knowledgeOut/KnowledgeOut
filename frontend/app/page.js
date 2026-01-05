@@ -61,6 +61,30 @@ export default function Home() {
   // 질문 목록 조회 훅 사용
   const { questions, loading, error, pageInfo, refetch } = useQuestions(apiParams);
 
+  // 페이지 로드 시 스크롤을 맨 위로 이동
+  useEffect(() => {
+    // 여러 방법으로 스크롤 초기화 (브라우저 호환성)
+    const resetScroll = () => {
+      window.scrollTo(0, 0);
+      if (document.documentElement) {
+        document.documentElement.scrollTop = 0;
+      }
+      if (document.body) {
+        document.body.scrollTop = 0;
+      }
+    };
+
+    // 즉시 실행
+    resetScroll();
+    
+    // 다음 프레임에서도 실행 (레이아웃 완료 후)
+    requestAnimationFrame(() => {
+      resetScroll();
+      // 한 번 더 실행 (모든 리소스 로드 후)
+      setTimeout(resetScroll, 0);
+    });
+  }, []);
+
   // URL 쿼리 파라미터 확인하여 마이페이지 자동 표시
   useEffect(() => {
     const mypage = searchParams?.get('mypage');
@@ -71,6 +95,25 @@ export default function Home() {
       setShowMyPage(false);
     }
   }, [searchParams, currentUser]);
+
+  // 마이페이지 표시/숨김 시 스크롤 초기화
+  useEffect(() => {
+    const resetScroll = () => {
+      window.scrollTo(0, 0);
+      if (document.documentElement) {
+        document.documentElement.scrollTop = 0;
+      }
+      if (document.body) {
+        document.body.scrollTop = 0;
+      }
+    };
+
+    resetScroll();
+    requestAnimationFrame(() => {
+      resetScroll();
+      setTimeout(resetScroll, 0);
+    });
+  }, [showMyPage]);
 
   // 카테고리 목록 조회
   useEffect(() => {
@@ -189,9 +232,22 @@ export default function Home() {
         <div className="max-w-4xl mx-auto space-y-6">
           <Button
             variant="ghost"
-            onClick={() => {
+            onClick={async () => {
               setShowMyPage(false);
+              // 스크롤을 먼저 초기화
+              window.scrollTo(0, 0);
+              if (document.documentElement) {
+                document.documentElement.scrollTop = 0;
+              }
+              if (document.body) {
+                document.body.scrollTop = 0;
+              }
+              // 라우터 이동
               router.push("/");
+              // 라우터 이동 후에도 스크롤 초기화
+              setTimeout(() => {
+                window.scrollTo(0, 0);
+              }, 0);
             }}
             className="gap-2"
           >
