@@ -249,6 +249,7 @@ export default function Home() {
                 onSelectQuestion={handleSelectQuestion}
                 likedQuestionIds={likedQuestionIds}
                 onToggleLike={toggleQuestionLike}
+                enableLike={false}
               />
             </TabsContent>
             <TabsContent value="pending">
@@ -257,6 +258,7 @@ export default function Home() {
                 onSelectQuestion={handleSelectQuestion}
                 likedQuestionIds={likedQuestionIds}
                 onToggleLike={toggleQuestionLike}
+                enableLike={false}
               />
             </TabsContent>
             <TabsContent value="answered">
@@ -265,6 +267,7 @@ export default function Home() {
                 onSelectQuestion={handleSelectQuestion}
                 likedQuestionIds={likedQuestionIds}
                 onToggleLike={toggleQuestionLike}
+                enableLike={false}
               />
             </TabsContent>
           </Tabs>
