@@ -23,16 +23,4 @@ public class CategoryService {
                 .map(CategoryResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }
-
-    // (선택 사항) 초기 카테고리 데이터 생성을 위한 메서드
-    @Transactional
-    public void initCategories() {
-        if (categoryRepository.count() == 0) {
-            categoryRepository.save(new Category("JAVA"));
-            categoryRepository.save(new Category("SPRING"));
-            categoryRepository.save(new Category("REACT"));
-            categoryRepository.save(new Category("DATABASE"));
-            categoryRepository.save(new Category("AWS"));
-        }
-    }
 }
