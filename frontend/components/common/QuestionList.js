@@ -8,7 +8,7 @@ import { QuestionCard } from './QuestionCard';
  * - id, title, content, viewCount, answerCount, createdAt, modifiedAt
  * - memberId, memberNickname, categoryId, categoryName, tagNames, likeCount
  */
-export function QuestionList({ questions, onSelectQuestion, likedQuestionIds, onToggleLike }) {
+export function QuestionList({ questions, onSelectQuestion, likedQuestionIds, onToggleLike, enableLike = true }) {
     return (
         <div className="space-y-4">
             {questions.map((question) => (
@@ -16,7 +16,7 @@ export function QuestionList({ questions, onSelectQuestion, likedQuestionIds, on
                     key={question.id}
                     question={question}
                     onSelectQuestion={onSelectQuestion}
-                    enableLike={true}
+                    enableLike={enableLike}
                     showViewCount={true}
                     showMemberName={true}
                     showTags={true}
