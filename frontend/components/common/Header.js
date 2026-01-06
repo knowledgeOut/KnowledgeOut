@@ -44,7 +44,7 @@ export function Header() {
               onClick={() => router.push("/")}
             >
               <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                질의응답 게시판
+                  지식OUT
               </h1>
               <p className="text-sm text-gray-600">
                 궁금한 점을 자유롭게 질문하고 답변을 나눠보세요

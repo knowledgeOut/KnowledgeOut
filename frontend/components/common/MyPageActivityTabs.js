@@ -67,7 +67,7 @@ export function MyPageActivityTabs({
                             key={question.id}
                             question={question}
                             onSelectQuestion={handleQuestionClick}
-                            enableLike={true}
+                            enableLike={false}
                             showViewCount={true}
                             showMemberName={true}
                             showTags={true}
@@ -122,7 +122,7 @@ export function MyPageActivityTabs({
                             key={question.id}
                             question={question}
                             onSelectQuestion={handleQuestionClick}
-                            enableLike={true}
+                            enableLike={false}
                             showViewCount={true}
                             showMemberName={true}
                             showTags={true}
