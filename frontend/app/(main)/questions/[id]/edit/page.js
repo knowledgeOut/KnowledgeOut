@@ -17,8 +17,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getQuestion, updateQuestion } from "@/features/question/api";
-import { getMyPage } from "@/features/member/api";
+import { getCurrentUser } from "@/features/member/api";
 import { getCategories } from "@/features/category/api";
+import { extractTagsFromContent } from "@/utils/tags";
 
 export default function EditQuestionPage({ params }) {
   // Next.js 15: params는 Promise이므로 use()로 unwrap
@@ -63,7 +64,12 @@ export default function EditQuestionPage({ params }) {
     const fetchUser = async () => {
       try {
         setLoadingUser(true);
-        await getMyPage();
+        const userData = await getCurrentUser();
+        if (!userData) {
+          setError("로그인이 필요합니다.");
+          router.push(`/questions/${id}`);
+          return;
+        }
       } catch (error) {
         setError("로그인이 필요합니다.");
         router.push(`/questions/${id}`);
@@ -90,13 +96,6 @@ export default function EditQuestionPage({ params }) {
     fetchUser();
     fetchCategories();
   }, [id, router]);
-
-  const extractTagsFromContent = (text) => {
-    const tagRegex = /#(\S+)/g;
-    const matches = text.match(tagRegex);
-    if (!matches) return [];
-    return matches.map((tag) => tag.substring(1));
-  };
 
   const handleContentChange = (e) => {
     const newContent = e.target.value;
@@ -148,7 +147,7 @@ export default function EditQuestionPage({ params }) {
 
   if (loadingQuestion || loadingUser || loadingCategories) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="loading-container">
         <div className="text-gray-600">로딩 중...</div>
       </div>
     );
@@ -156,8 +155,8 @@ export default function EditQuestionPage({ params }) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="page-container-padded">
+        <div className="container-narrow">
           <Button
             variant="ghost"
             onClick={() => router.push(`/questions/${id}`)}
@@ -173,8 +172,8 @@ export default function EditQuestionPage({ params }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="page-container-padded">
+      <div className="container-narrow">
         <Button variant="ghost" onClick={handleCancel} className="gap-2 mb-4">
           <ArrowLeft className="w-4 h-4" />
           돌아가기

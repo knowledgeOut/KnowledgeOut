@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { signup, login } from '../features/auth/api';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { signup, login } from '@/features/auth/api';
 
 export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSignup }) {
   const router = useRouter();
@@ -116,11 +116,6 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
           
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-4 pt-4">
-              {loginError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-                  {loginError}
-                </div>
-              )}
               <div>
                 <Label htmlFor="login-email">이메일</Label>
                 <Input
@@ -151,11 +146,6 @@ export function AuthDialog({ open, onClose, defaultTab = 'login', onLogin, onSig
 
           <TabsContent value="signup">
             <form onSubmit={handleSignup} className="space-y-4 pt-4">
-              {signupError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-                  {signupError}
-                </div>
-              )}
               <div>
                 <Label htmlFor="signup-nickname">닉네임</Label>
                 <Input

@@ -34,6 +34,9 @@ public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSp
     // 4. 특정 회원이 작성한 질문 목록 (최신순)
     List<Question> findByMemberIdOrderByCreatedAtDesc(Long memberId);
 
+    // 4-1. 특정 회원이 작성한 삭제되지 않은 질문 목록 (최신순)
+    List<Question> findByMemberIdAndStatusFalseOrderByCreatedAtDesc(Long memberId);
+
 
     // --- [추가된 통계 기능] ---
 

@@ -1,18 +1,20 @@
 "use client";
 
-import { useRouter } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, User as UserIcon, LayoutDashboard } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { Search, Plus } from 'lucide-react';
 import { QuestionList } from '@/components/common/QuestionList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthDialog } from '@/components/common/AuthDialog';
-import { getMyPage } from '@/features/member/api';
+import { MyPageView } from '@/components/common/MyPageView';
 import { useQuestions } from '@/features/question/hooks';
 import { getCategories } from '@/features/category/api';
 import { getQuestionCounts } from '@/features/question/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { resetScrollWithAnimation } from '@/utils/scroll';
 import {
   Pagination,
   PaginationContent,
@@ -25,15 +27,15 @@ import {
 
 export default function Home() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { currentUser, isCheckingAuth, likedQuestionIds, login, signup, logout, toggleQuestionLike } = useAuth();
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [selectedStatus, setSelectedStatus] = useState('전체');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authDialogTab, setAuthDialogTab] = useState('login');
-  const [likedQuestions, setLikedQuestions] = useState(new Set());
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [showMyPage, setShowMyPage] = useState(false);
   const [categories, setCategories] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [counts, setCounts] = useState({ totalCount: 0, pendingCount: 0, answeredCount: 0 });
@@ -51,27 +53,22 @@ export default function Home() {
   // 질문 목록 조회 훅 사용
   const { questions, loading, error, pageInfo, refetch } = useQuestions(apiParams);
 
-  // 페이지 로드 시 로그인 상태 확인
+  // 페이지 로드 시 스크롤을 맨 위로 이동
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const userData = await getMyPage();
-        setCurrentUser({
-          id: userData.id,
-          email: userData.email,
-          nickname: userData.nickname,
-          name: userData.nickname,
-          role: userData.role,
-        });
-      } catch (error) {
-        setCurrentUser(null);
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    };
-
-    checkAuth();
+    resetScrollWithAnimation();
   }, []);
+
+  // URL 쿼리 파라미터 확인하여 마이페이지 자동 표시
+  useEffect(() => {
+    const mypage = searchParams?.get('mypage');
+    if (mypage === 'true' && currentUser) {
+      setShowMyPage(true);
+    } else {
+      // 쿼리 파라미터가 없거나 'true'가 아니면 마이페이지 숨김
+      setShowMyPage(false);
+    }
+  }, [searchParams, currentUser]);
+
 
   // 카테고리 목록 조회
   useEffect(() => {
@@ -103,26 +100,20 @@ export default function Home() {
 
 
   const handleLogin = (user) => {
-    setCurrentUser(user);
+    login(user);
   };
 
   const handleSignup = (user) => {
-    setCurrentUser(user);
+    signup(user);
   };
 
   const handleLogout = async () => {
-    try {
-      // 백엔드 로그아웃 API 호출 (세션 무효화)
-      const { logout } = await import('@/features/auth/api');
-      await logout();
-    } catch (error) {
-      console.error('로그아웃 중 오류:', error);
-      // 로그아웃 API 에러가 나도 로컬 상태는 초기화
-    } finally {
-      // 로컬 상태 초기화
-      setCurrentUser(null);
-      setLikedQuestions(new Set());
-    }
+    await logout();
+    setShowMyPage(false);
+  };
+
+  const handleCloseMyPage = () => {
+    setShowMyPage(false);
   };
 
   // 카테고리나 검색어 변경 시 첫 페이지로 이동
@@ -136,9 +127,6 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 클라이언트 측 필터링 제거 (백엔드에서 이미 처리됨)
-  const filteredQuestions = questions;
-
   const categoryOptions = ['전체', ...categories.map(c => c.name)];
 
   // 질문 선택 시 상세 페이지로 이동
@@ -149,76 +137,28 @@ export default function Home() {
   // 인증 상태 확인 중이면 로딩 표시
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="loading-container">
         <div className="text-gray-600">로딩 중...</div>
       </div>
     );
   }
 
+  // 마이페이지 표시
+  if (showMyPage && currentUser) {
+    return (
+      <MyPageView
+        currentUser={currentUser}
+        likedQuestionIds={likedQuestionIds}
+        onToggleLike={toggleQuestionLike}
+        onLogout={handleLogout}
+        onClose={handleCloseMyPage}
+      />
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl mb-2">질의응답 게시판</h1>
-              <p className="text-gray-600">궁금한 점을 자유롭게 질문하고 답변을 나눠보세요</p>
-            </div>
-            <div className="flex gap-3">
-              {currentUser ? (
-                <>
-                  <span className="flex items-center gap-2 text-gray-700">
-                    <UserIcon className="w-4 h-4" />
-                    {(!currentUser.name || currentUser.name.startsWith('deletedUser_') ? '탈퇴한 사용자' : currentUser.name)}님
-                  </span>
-                  <Button
-                    variant="outline"
-                    onClick={() => router.push('/mypage')}
-                  >
-                    마이페이지
-                  </Button>
-                  {currentUser.role === 'ROLE_ADMIN' && (
-                    <Button
-                      variant="outline"
-                      onClick={() => router.push('/admin/dashboard')}
-                      className="gap-2"
-                    >
-                      <LayoutDashboard className="w-4 h-4" />
-                      대시보드
-                    </Button>
-                  )}
-                  <Button variant="outline" onClick={handleLogout}>
-                    로그아웃
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setAuthDialogTab('login');
-                      setShowAuthDialog(true);
-                    }}
-                  >
-                    로그인
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setAuthDialogTab('signup');
-                      setShowAuthDialog(true);
-                    }}
-                  >
-                    회원가입
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="page-container">
+      <div className="container-wide-padded">
         <div className="mb-6 flex gap-4 flex-wrap items-center">
           <div className="flex-1 min-w-[300px] relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -305,20 +245,26 @@ export default function Home() {
             </TabsList>
             <TabsContent value="전체">
               <QuestionList
-                questions={filteredQuestions}
+                questions={questions}
                 onSelectQuestion={handleSelectQuestion}
+                likedQuestionIds={likedQuestionIds}
+                onToggleLike={toggleQuestionLike}
               />
             </TabsContent>
             <TabsContent value="pending">
               <QuestionList
-                questions={filteredQuestions}
+                questions={questions}
                 onSelectQuestion={handleSelectQuestion}
+                likedQuestionIds={likedQuestionIds}
+                onToggleLike={toggleQuestionLike}
               />
             </TabsContent>
             <TabsContent value="answered">
               <QuestionList
-                questions={filteredQuestions}
+                questions={questions}
                 onSelectQuestion={handleSelectQuestion}
+                likedQuestionIds={likedQuestionIds}
+                onToggleLike={toggleQuestionLike}
               />
             </TabsContent>
           </Tabs>

@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import * as memberApi from '../../../features/member/api';
+import * as memberApi from '@/features/member/api';
 import { getMyQuestions, getMyAnswers, getMyQuestionLikes } from '@/features/member/api';
 import { MyPageUserInfoSection } from '@/components/common/MyPageUserInfoSection';
 import { MyPageActivityTabs } from '@/components/common/MyPageActivityTabs';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function MyPagePage() {
     const router = useRouter();
@@ -15,13 +16,15 @@ export default function MyPagePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-
     // 활동 데이터 상태
     const [myQuestions, setMyQuestions] = useState([]);
     const [myAnswers, setMyAnswers] = useState([]);
     const [likedQuestions, setLikedQuestions] = useState([]);
     const [loadingActivity, setLoadingActivity] = useState(true);
     const [activeTab, setActiveTab] = useState('questions');
+    
+    // 전역 상태에서 추천 목록 가져오기
+    const { likedQuestionIds, toggleQuestionLike } = useAuth();
 
     useEffect(() => {
         fetchUserData();
@@ -78,12 +81,9 @@ export default function MyPagePage() {
         }
     };
 
+
     const handleBack = () => {
         router.back();
-    };
-
-    const handleLogout = () => {
-        handleLogoutApi();
     };
 
     const handleSelectQuestion = (questionId) => {
@@ -92,7 +92,7 @@ export default function MyPagePage() {
 
     if (loading && !user) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="loading-container">
                 <div className="text-gray-600">로딩 중...</div>
             </div>
         );
@@ -100,7 +100,7 @@ export default function MyPagePage() {
 
     if (error && !user) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="loading-container">
                 <div className="bg-white p-6 rounded-lg shadow-md max-w-md w-full">
                     <div className="text-red-600 mb-4">{error}</div>
                     <button
@@ -119,8 +119,8 @@ export default function MyPagePage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="max-w-4xl mx-auto space-y-6">
+        <div className="page-container-padded">
+            <div className="container-narrow-spaced">
                 <Button variant="ghost" onClick={handleBack} className="gap-2 mb-6">
                     <ArrowLeft className="w-4 h-4" />
                     돌아가기
@@ -136,6 +136,8 @@ export default function MyPagePage() {
                     activeTab={activeTab}
                     onTabChange={setActiveTab}
                     onSelectQuestion={handleSelectQuestion}
+                    likedQuestionIds={likedQuestionIds}
+                    onToggleLike={toggleQuestionLike}
                 />
             </div>
         </div>

@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { login } from '../../../features/auth/api';
-import { Input } from '../../../components/ui/input';
-import { Button } from '../../../components/ui/button';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { login } from '@/features/auth/api';
+import { getErrorMessage, ErrorCode, isErrorCode } from '@/lib/errorCodes';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -66,16 +67,21 @@ export default function LoginPage() {
             await login(formData);
             // 로그인 성공 시 세션 쿠키(JSESSIONID)가 자동으로 저장됩니다
             // Spring Security 세션 기반 인증을 사용하므로 클라이언트에서 사용자 정보를 저장하지 않습니다
+            // 로그인 성공 시 쿼리 파라미터 없이 메인 페이지로 이동
             router.push('/');
+            router.refresh();
         } catch (error) {
-            // 로그인 실패 시 적절한 메시지로 변환
-            let errorMessage = error.message || '로그인에 실패했습니다.';
-            
-            // "로그인이 필요합니다." 또는 로그인 관련 에러인 경우 메시지 변경
-            if (errorMessage.includes('로그인이 필요합니다') || 
-                errorMessage.includes('로그인') ||
-                (error.response && error.response.status === 401)) {
-                errorMessage = '이메일 또는 비밀번호를 확인해 주세요.';
+            // ErrorCode를 사용하여 일관된 에러 메시지 처리
+            let errorMessage = getErrorMessage(error.message);
+
+            // 로그인 관련 에러인 경우 통일된 메시지로 변환
+            if (
+                isErrorCode(errorMessage, 'LOGIN_REQUIRED') ||
+                isErrorCode(errorMessage, 'AUTHENTICATION_FAILED') ||
+                isErrorCode(errorMessage, 'INVALID_EMAIL_OR_PASSWORD') ||
+                (error.response && error.response.status === 401)
+            ) {
+                errorMessage = ErrorCode.INVALID_EMAIL_OR_PASSWORD;
             }
             
             setSubmitError(errorMessage);
@@ -85,7 +91,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="page-container-auth">
             <div className="max-w-md w-full space-y-8">
                 <div>
                     <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -99,12 +105,6 @@ export default function LoginPage() {
                     </p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    {submitError && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                            {submitError}
-                        </div>
-                    )}
-
                     <div className="space-y-4">
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -118,7 +118,6 @@ export default function LoginPage() {
                                 required
                                 value={formData.email}
                                 onChange={handleChange}
-                                className={errors.email ? 'border-red-500' : ''}
                                 placeholder="example@email.com"
                             />
                             {errors.email && (
@@ -138,7 +137,6 @@ export default function LoginPage() {
                                 required
                                 value={formData.password}
                                 onChange={handleChange}
-                                className={errors.password ? 'border-red-500' : ''}
                                 placeholder="비밀번호를 입력하세요"
                             />
                             {errors.password && (

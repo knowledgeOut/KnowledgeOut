@@ -1,12 +1,13 @@
 'use client';
 
-import { ArrowLeft, MessageCircle, Tag, ThumbsUp, Edit, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Separator } from '../ui/separator';
+import { ArrowLeft, MessageCircle, Tag, ThumbsUp, Edit, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { AnswerForm } from './AnswerForm';
+import { getUserDisplayName } from '@/utils/user';
 
 export function QuestionDetail({ question, onBack, onAddAnswer, onDeleteAnswer, onLike, isLiked, currentUser }) {
     const router = useRouter();
@@ -31,8 +32,7 @@ export function QuestionDetail({ question, onBack, onAddAnswer, onDeleteAnswer, 
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4 text-sm text-gray-500">
-                                {/*<span>{question.author}</span>*/}
-                                <span>{!question.author || question.author.startsWith('deletedUser_') ? '탈퇴한 사용자' : question.author}</span>
+                                <span>{getUserDisplayName(question.author)}</span>
                                 <span>{new Date(question.createdAt).toLocaleString('ko-KR')}</span>
                             </div>
                             <Button
@@ -74,7 +74,7 @@ export function QuestionDetail({ question, onBack, onAddAnswer, onDeleteAnswer, 
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4 text-sm text-gray-500">
-                                            <span>{!answer.author || answer.author.startsWith('deletedUser_') ? '탈퇴한 사용자' : answer.author}</span>
+                                            <span>{getUserDisplayName(answer.author)}</span>
                                             <span>{new Date(answer.createdAt).toLocaleString('ko-KR')}</span>
                                         </div>
                                         {isMyAnswer && (

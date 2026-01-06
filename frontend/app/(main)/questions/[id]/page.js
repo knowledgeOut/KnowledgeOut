@@ -10,6 +10,8 @@ import {
   Trash2,
   Check,
   X,
+  ThumbsUp,
+  Tag,
 } from "lucide-react";
 
 // UI 구성 요소 (Shadcn UI 기준)
@@ -22,14 +24,16 @@ import { Textarea } from "@/components/ui/textarea";
 // 공통 컴포넌트 및 API 기능
 import { AnswerForm } from "@/components/common/AnswerForm";
 import { useQuestion } from "@/features/question/hooks";
-import { deleteQuestion } from "@/features/question/api";
+import { deleteQuestion, likeQuestion } from "@/features/question/api";
 import {
   getAnswers,
   createAnswer,
   deleteAnswer,
   updateAnswer,
 } from "@/features/answer/api";
-import { getMyPage } from "@/features/member/api";
+import { getCurrentUser } from "@/features/member/api";
+import { getUserDisplayName } from "@/utils/user";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function QuestionDetailPage({ params }) {
   // Next.js 15: params는 Promise이므로 use()를 통해 언래핑
@@ -47,10 +51,15 @@ export default function QuestionDetailPage({ params }) {
   const [loadingAnswers, setLoadingAnswers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [likeCount, setLikeCount] = useState(0);
+  
+  // 전역 상태에서 추천 목록 가져오기
+  const { likedQuestionIds, toggleQuestionLike } = useAuth();
 
   // 답변 수정 관련 상태
   const [editingAnswerId, setEditingAnswerId] = useState(null);
   const [editingContent, setEditingContent] = useState("");
+  const [editingTags, setEditingTags] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // 사용자 ID 추출 헬퍼 함수
@@ -61,7 +70,7 @@ export default function QuestionDetailPage({ params }) {
     const checkAuth = async () => {
       try {
         setIsAuthChecking(true);
-        const userData = await getMyPage();
+        const userData = await getCurrentUser();
         // API 응답 구조에 따라 id 또는 memberId 확인
         if (userData && getUserId(userData)) {
           setCurrentUser(userData);
@@ -97,6 +106,34 @@ export default function QuestionDetailPage({ params }) {
     fetchAnswers();
   }, [id]);
 
+  // 질문 데이터가 로드되면 likeCount 초기화
+  useEffect(() => {
+    if (question) {
+      setLikeCount(question.likeCount || 0);
+    }
+  }, [question]);
+
+  // 추천 버튼 클릭 핸들러
+  const handleLikeClick = async () => {
+    if (!currentUser) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    
+    try {
+      const newLikeCount = await likeQuestion(id);
+      setLikeCount(newLikeCount);
+      
+      // 전역 상태에서 추천 상태 토글
+      toggleQuestionLike(id);
+    } catch (error) {
+      console.error('추천 처리 중 오류:', error);
+      alert(error.message || '추천 처리에 실패했습니다.');
+    }
+  };
+
+  const isLiked = likedQuestionIds.has(String(id));
+
   /** 질문 수정/삭제 핸들러 */
   const handleEditQuestion = () => router.push(`/questions/${id}/edit`);
 
@@ -118,7 +155,7 @@ export default function QuestionDetailPage({ params }) {
   };
 
   /** 답변 등록/수정/삭제 핸들러 */
-  const handleAddAnswer = async (content) => {
+  const handleAddAnswer = async (content, author, tags) => {
     // currentUser 상태 재검증
     if (!currentUser || !getUserId(currentUser)) {
       alert("로그인이 필요합니다. 다시 로그인해 주세요.");
@@ -128,7 +165,7 @@ export default function QuestionDetailPage({ params }) {
     try {
       setIsSubmitting(true);
       setSubmitError(null);
-      await createAnswer(id, { content });
+      await createAnswer(id, { content, tagNames: tags || [] });
       await fetchAnswers();
       // 전체 카운트 갱신을 위해 페이지 새로고침 (혹은 상태 업데이트)
       window.location.reload();
@@ -146,6 +183,7 @@ export default function QuestionDetailPage({ params }) {
   const handleStartEditAnswer = (answer) => {
     setEditingAnswerId(answer.id);
     setEditingContent(answer.content || "");
+    setEditingTags(answer.tagNames || []);
   };
 
   const handleSaveEditAnswer = async (answerId) => {
@@ -155,10 +193,11 @@ export default function QuestionDetailPage({ params }) {
     }
     try {
       setIsUpdating(true);
-      await updateAnswer(id, answerId, { content: editingContent.trim() });
+      await updateAnswer(id, answerId, { content: editingContent.trim(), tagNames: editingTags || [] });
       await fetchAnswers();
       setEditingAnswerId(null);
       setEditingContent("");
+      setEditingTags([]);
     } catch (err) {
       alert(err.message || "수정에 실패했습니다.");
     } finally {
@@ -188,7 +227,7 @@ export default function QuestionDetailPage({ params }) {
     );
   if (error || !question)
     return (
-      <div className="min-h-screen p-10 text-center space-y-4">
+      <div className="error-container">
         <p className="text-red-500 font-medium">
           {error || "질문을 찾을 수 없습니다."}
         </p>
@@ -204,8 +243,8 @@ export default function QuestionDetailPage({ params }) {
   const status = question.answerCount > 0 ? "answered" : "pending";
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="page-container-padded">
+      <div className="container-narrow-spaced">
         <Button
           variant="ghost"
           onClick={handleBack}
@@ -248,7 +287,7 @@ export default function QuestionDetailPage({ params }) {
               <div className="flex items-center justify-between text-sm text-gray-500">
                 <div className="flex gap-4">
                   <span className="font-semibold text-gray-700">
-                    {question.memberNickname}
+                    {getUserDisplayName(question.memberNickname)}
                   </span>
                   <span>
                     {new Date(question.createdAt).toLocaleString("ko-KR")}
@@ -259,6 +298,13 @@ export default function QuestionDetailPage({ params }) {
                     <Eye className="w-4 h-4" />
                     {question.viewCount || 0}
                   </span>
+                  <button
+                    onClick={handleLikeClick}
+                    className="flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors"
+                  >
+                    <ThumbsUp className={`w-4 h-4 ${isLiked ? 'fill-gray-200' : ''}`} />
+                    {likeCount || question.likeCount || 0}
+                  </button>
                   <span className="flex items-center gap-1">
                     <MessageCircle className="w-4 h-4" />
                     {question.answerCount || 0}
@@ -270,49 +316,45 @@ export default function QuestionDetailPage({ params }) {
                 {question.content}
               </div>
 
-              {(isQuestionAuthor || isAdmin) && (
-                <div className="flex justify-end gap-2 pt-4 border-t">
-                  {question.answerCount === 0 ? (
-                    <>
-                      {isQuestionAuthor && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleEditQuestion}
-                          className="gap-2"
-                        >
-                          <Edit className="w-4 h-4" /> 수정
-                        </Button>
-                      )}
+              <div className="pt-4 border-t">
+                <p className="text-sm text-gray-500 mb-3 text-right">
+                  답변이 달린 질문은 수정 및 삭제가 불가합니다.
+                </p>
+                {question.answerCount === 0 && (isQuestionAuthor || isAdmin) && (
+                  <div className="flex justify-end gap-2">
+                    {isQuestionAuthor && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={handleDeleteQuestion}
-                        className="gap-2 text-red-600 hover:bg-red-50 border-red-100"
+                        onClick={handleEditQuestion}
+                        className="gap-2"
                       >
-                        <Trash2 className="w-4 h-4" /> 삭제
+                        <Edit className="w-4 h-4" /> 수정
                       </Button>
-                    </>
-                  ) : (
-                    <>
-                      {isAdmin ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleDeleteQuestion}
-                          className="gap-2 text-red-600 hover:bg-red-50 border-red-100"
-                        >
-                          <Trash2 className="w-4 h-4" /> 삭제
-                        </Button>
-                      ) : (
-                        <p className="text-sm text-gray-500 italic">
-                          답변이 달린 질문은 수정 및 삭제가 불가합니다.
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeleteQuestion}
+                      className="gap-2 text-red-600 hover:bg-red-50 border-red-100"
+                    >
+                      <Trash2 className="w-4 h-4" /> 삭제
+                    </Button>
+                  </div>
+                )}
+                {question.answerCount > 0 && isAdmin && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeleteQuestion}
+                      className="gap-2 text-red-600 hover:bg-red-50 border-red-100"
+                    >
+                      <Trash2 className="w-4 h-4" /> 삭제
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -320,7 +362,7 @@ export default function QuestionDetailPage({ params }) {
         {/* 답변 영역 */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pt-4">
-            <MessageCircle className="w-6 h-6 text-indigo-500" />
+            <MessageCircle className="w-6 h-6 text-gray-900" />
             <h3 className="text-xl font-bold text-gray-900">
               답변 {question.answerCount || 0}개
             </h3>
@@ -373,7 +415,7 @@ export default function QuestionDetailPage({ params }) {
                       key={answer.id}
                       className={
                         isMyAnswer
-                          ? "border-indigo-100 bg-indigo-50/5 shadow-sm"
+                          ? "bg-white shadow-sm"
                           : "border-none shadow-sm"
                       }
                     >
@@ -381,7 +423,7 @@ export default function QuestionDetailPage({ params }) {
                         <div className="flex justify-between items-center mb-4">
                           <div className="flex items-center gap-3 text-sm">
                             <span className="font-bold text-gray-800">
-                              {answer.memberNickname}
+                              {getUserDisplayName(answer.memberNickname)}
                             </span>
                             <span className="text-gray-400">
                               {new Date(answer.createdAt).toLocaleString()}
@@ -389,7 +431,7 @@ export default function QuestionDetailPage({ params }) {
                             {isMyAnswer && (
                               <Badge
                                 variant="outline"
-                                className="text-[10px] text-indigo-600 bg-indigo-50 border-indigo-200 h-4"
+                                className="text-[12px] text-indigo-600 bg-indigo-50 border-indigo-200 h-5"
                               >
                                 내 답변
                               </Badge>
@@ -423,17 +465,40 @@ export default function QuestionDetailPage({ params }) {
                           <div className="space-y-3">
                             <Textarea
                               value={editingContent}
-                              onChange={(e) =>
-                                setEditingContent(e.target.value)
-                              }
+                              onChange={(e) => {
+                                setEditingContent(e.target.value);
+                                // 태그 자동 추출
+                                const tagRegex = /#(\S+)/g;
+                                const matches = e.target.value.match(tagRegex);
+                                if (matches) {
+                                  setEditingTags(matches.map(tag => tag.substring(1)));
+                                }
+                              }}
                               rows={5}
                               className="focus-visible:ring-indigo-500 text-base border-indigo-200"
+                              placeholder="답변을 수정하세요. 태그는 #태그이름 형식으로 입력하세요."
                             />
+                            {editingTags.length > 0 && (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm text-gray-600 flex items-center gap-1">
+                                  <Tag className="w-3 h-3" />
+                                  태그:
+                                </span>
+                                {editingTags.map((tag, idx) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    #{tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
                             <div className="flex justify-end gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setEditingAnswerId(null)}
+                                onClick={() => {
+                                  setEditingAnswerId(null);
+                                  setEditingTags([]);
+                                }}
                               >
                                 취소
                               </Button>
@@ -449,8 +514,20 @@ export default function QuestionDetailPage({ params }) {
                             </div>
                           </div>
                         ) : (
-                          <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">
-                            {answer.content}
+                          <div className="space-y-3">
+                            <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-base">
+                              {answer.content}
+                            </div>
+                            {answer.tagNames && answer.tagNames.length > 0 && (
+                              <div className="flex items-center gap-2 flex-wrap pt-2 border-t">
+                                <Tag className="w-4 h-4 text-gray-500" />
+                                {answer.tagNames.map((tag, idx) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    #{tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                       </CardContent>
@@ -458,7 +535,7 @@ export default function QuestionDetailPage({ params }) {
                   );
                 })
               ) : (
-                <div className="text-center py-12 text-gray-400 text-sm italic border-2 border-dashed border-gray-100 rounded-lg">
+                <div className="text-center py-12 text-gray-400 text-sm border-2 border-dashed border-gray-100 rounded-lg">
                   아직 등록된 답변이 없습니다.
                 </div>
               )}

@@ -2,7 +2,7 @@
  * 관리자 관련 API 함수
  */
 
-import apiClient from '../../lib/axios';
+import apiClient from '@/lib/axios';
 
 /**
  * 관리자 대시보드 조회

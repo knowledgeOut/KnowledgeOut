@@ -1,0 +1,81 @@
+/**
+ * 공통 컴포넌트 스타일
+ * 반복되는 Tailwind 클래스 패턴을 재사용 가능한 클래스로 추출
+ */
+
+@layer components {
+  /* 페이지 레이아웃 */
+  .page-container {
+    @apply min-h-screen bg-gray-50;
+  }
+
+  .page-container-centered {
+    @apply min-h-screen bg-gray-50 flex items-center justify-center;
+  }
+
+  .page-container-padded {
+    @apply min-h-screen bg-gray-50 p-6;
+  }
+
+  .page-container-auth {
+    @apply min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8;
+  }
+
+  /* 컨테이너 레이아웃 */
+  .container-narrow {
+    @apply max-w-4xl mx-auto;
+  }
+
+  .container-wide {
+    @apply max-w-6xl mx-auto;
+  }
+
+  .container-narrow-spaced {
+    @apply max-w-4xl mx-auto space-y-6;
+  }
+
+  .container-wide-padded {
+    @apply max-w-6xl mx-auto px-6 py-8;
+  }
+
+  .container-header {
+    @apply max-w-6xl mx-auto px-6 py-4;
+  }
+
+  /* 간격 패턴 */
+  .spacing-y-4 {
+    @apply space-y-4;
+  }
+
+  .spacing-y-6 {
+    @apply space-y-6;
+  }
+
+  /* 로딩/에러 상태 */
+  .loading-container {
+    @apply min-h-screen bg-gray-50 flex items-center justify-center;
+  }
+
+  .error-container {
+    @apply min-h-screen bg-gray-50 p-10 text-center space-y-4;
+  }
+
+  /* 카드 내부 간격 */
+  .card-spacing {
+    @apply space-y-3;
+  }
+
+  .card-spacing-lg {
+    @apply space-y-4;
+  }
+
+  /* 폼 간격 */
+  .form-spacing {
+    @apply space-y-4;
+  }
+
+  .form-field-spacing {
+    @apply space-y-2;
+  }
+}
+

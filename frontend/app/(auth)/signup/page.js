@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signup } from '../../../features/auth/api';
-import { Input } from '../../../components/ui/input';
-import { Button } from '../../../components/ui/button';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { signup } from '@/features/auth/api';
+import { getErrorMessage, ErrorCode, isErrorCode } from '@/lib/errorCodes';
 
 export default function SignupPage() {
     const router = useRouter();
@@ -48,14 +49,14 @@ export default function SignupPage() {
         if (!formData.password) {
             newErrors.password = '비밀번호를 입력해주세요.';
         } else if (formData.password.length < 8) {
-            newErrors.password = '비밀번호는 8자 이상이어야 합니다.';
+            newErrors.password = ErrorCode.PASSWORD_POLICY_VIOLATION;
         }
 
         // 닉네임 검증
         if (!formData.nickname) {
             newErrors.nickname = '닉네임을 입력해주세요.';
         } else if (formData.nickname.length < 2) {
-            newErrors.nickname = '닉네임은 2자 이상이어야 합니다.';
+            newErrors.nickname = ErrorCode.NICKNAME_LENGTH_VIOLATION;
         }
 
         setErrors(newErrors);
@@ -77,16 +78,35 @@ export default function SignupPage() {
             // 회원가입 성공 시 로그인 페이지로 리다이렉트
             router.push('/login?signup=success');
         } catch (error) {
-            // 백엔드 에러 메시지 추출
-            const errorMessage = error.message || '회원가입에 실패했습니다.';
-            setSubmitError(errorMessage);
+            // ErrorCode를 사용하여 일관된 에러 메시지 처리
+            const errorMessage = getErrorMessage(error.message);
+            
+            // 서버 에러를 개별 필드에 매핑
+            if (isErrorCode(errorMessage, 'DUPLICATE_EMAIL')) {
+                setErrors(prev => ({
+                    ...prev,
+                    email: errorMessage,
+                }));
+            } else if (isErrorCode(errorMessage, 'NICKNAME_DUPLICATED')) {
+                setErrors(prev => ({
+                    ...prev,
+                    nickname: errorMessage,
+                }));
+            } else if (isErrorCode(errorMessage, 'PASSWORD_POLICY_VIOLATION')) {
+                setErrors(prev => ({
+                    ...prev,
+                    password: errorMessage,
+                }));
+            } else {
+                setSubmitError(errorMessage);
+            }
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="page-container-auth">
             <div className="max-w-md w-full space-y-8">
                 <div>
                     <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -100,12 +120,6 @@ export default function SignupPage() {
                     </p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    {submitError && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                            {submitError}
-                        </div>
-                    )}
-
                     <div className="space-y-4">
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">

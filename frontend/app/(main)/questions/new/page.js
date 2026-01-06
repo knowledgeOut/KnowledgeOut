@@ -11,8 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createQuestion } from '@/features/question/api';
-import { getMyPage } from '@/features/member/api';
+import { getCurrentUser } from '@/features/member/api';
 import { getCategories } from '@/features/category/api';
+import { extractTagsFromContent } from '@/utils/tags';
 
 export default function NewQuestionPage() {
     const router = useRouter();
@@ -31,7 +32,12 @@ export default function NewQuestionPage() {
         const fetchUser = async () => {
             try {
                 setLoadingUser(true);
-                const userData = await getMyPage();
+                const userData = await getCurrentUser();
+                if (!userData) {
+                    alert('로그인이 필요합니다.');
+                    router.push('/');
+                    return;
+                }
                 setAuthor(userData.nickname || userData.email || '');
             } catch (error) {
                 console.error('사용자 정보를 불러오는데 실패했습니다:', error);
@@ -64,13 +70,6 @@ export default function NewQuestionPage() {
         fetchUser();
         fetchCategories();
     }, [router]);
-
-    const extractTagsFromContent = (text) => {
-        const tagRegex = /#(\S+)/g;
-        const matches = text.match(tagRegex);
-        if (!matches) return [];
-        return matches.map(tag => tag.substring(1));
-    };
 
     const handleContentChange = (e) => {
         const newContent = e.target.value;
@@ -129,8 +128,8 @@ export default function NewQuestionPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="max-w-4xl mx-auto">
+        <div className="page-container-padded">
+            <div className="container-narrow">
                 <Card>
                     <CardHeader>
                         <CardTitle>새 질문 작성</CardTitle>

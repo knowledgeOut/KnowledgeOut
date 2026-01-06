@@ -3,14 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Mail, Edit } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Separator } from '../ui/separator';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { updateMember, withdraw } from '@/features/member/api';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import * as authApi from '@/features/auth/api';
+import { updateMember, withdraw } from '@/features/member/api';
+import { getErrorMessage, ErrorCode, isErrorCode } from '@/lib/errorCodes';
+import { getUserDisplayName } from '@/utils/user';
 
 export function MyPageUserInfoSection({ user, onLogout }) {
     const router = useRouter();
@@ -22,6 +24,7 @@ export function MyPageUserInfoSection({ user, onLogout }) {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [passwordError, setPasswordError] = useState('');
+    const [nicknameError, setNicknameError] = useState('');
     const [isWithdrawing, setIsWithdrawing] = useState(false);
 
     // 사용자 정보가 변경되면 폼 초기화
@@ -32,6 +35,7 @@ export function MyPageUserInfoSection({ user, onLogout }) {
             confirmPassword: '',
         });
         setPasswordError('');
+        setNicknameError('');
     }, [user]);
 
     const handleSubmit = async () => {
@@ -41,26 +45,26 @@ export function MyPageUserInfoSection({ user, onLogout }) {
 
         // 최소 하나는 변경되어야 함
         if (!nicknameChanged && !passwordChanged) {
-            alert('변경할 내용이 없습니다.');
+            alert(ErrorCode.NO_CHANGES_DETECTED);
             return;
         }
 
         // 유효성 검사
         if (nicknameChanged) {
             if (!editForm.nickname || editForm.nickname.trim().length < 2) {
-                alert('닉네임은 2자 이상이어야 합니다.');
+                setNicknameError(ErrorCode.NICKNAME_LENGTH_VIOLATION);
                 return;
             }
         }
 
         if (passwordChanged) {
             if (editForm.password.length < 8) {
-                setPasswordError('비밀번호는 8자 이상이어야 합니다.');
+                setPasswordError(ErrorCode.PASSWORD_POLICY_VIOLATION);
                 return;
             }
 
             if (editForm.password !== editForm.confirmPassword) {
-                setPasswordError('비밀번호가 일치하지 않습니다.');
+                setPasswordError(ErrorCode.PASSWORD_MISMATCH);
                 return;
             }
         }
@@ -86,7 +90,8 @@ export function MyPageUserInfoSection({ user, onLogout }) {
             alert('회원 정보가 수정되었습니다.');
             setIsEditDialogOpen(false);
             setPasswordError('');
-            
+            setNicknameError('');
+
             // 비밀번호가 변경된 경우 로그아웃
             if (passwordChanged) {
                 if (onLogout) {
@@ -98,17 +103,32 @@ export function MyPageUserInfoSection({ user, onLogout }) {
                 window.location.reload();
             }
         } catch (error) {
+            // ErrorCode를 사용하여 일관된 에러 메시지 처리
+            const errorMessage = getErrorMessage(error.message);
+
             // 비밀번호 변경 시도 시 발생한 에러인 경우 비밀번호 입력창에 표시
-            if (passwordChanged && (error.message?.includes('비밀번호') || error.message?.includes('동일한'))) {
-                setPasswordError(error.message);
+            if (passwordChanged && (
+                isErrorCode(errorMessage, 'PASSWORD_POLICY_VIOLATION') ||
+                isErrorCode(errorMessage, 'PASSWORD_MISMATCH') ||
+                isErrorCode(errorMessage, 'PASSWORD_SAME_AS_CURRENT')
+            )) {
+                setPasswordError(errorMessage);
                 // 에러 발생 시 비밀번호 입력창 비우기
                 setEditForm({
                     ...editForm,
                     password: '',
                     confirmPassword: '',
                 });
-            } else {
-                alert(error.message || '회원 정보 수정에 실패했습니다.');
+            }
+            // 닉네임 변경 시도 시 발생한 에러인 경우 닉네임 입력창에 표시
+            else if (nicknameChanged && (
+                isErrorCode(errorMessage, 'NICKNAME_LENGTH_VIOLATION') ||
+                isErrorCode(errorMessage, 'NICKNAME_DUPLICATED')
+            )) {
+                setNicknameError(errorMessage);
+            }
+            else {
+                alert(errorMessage);
             }
         } finally {
             setIsSubmitting(false);
@@ -123,6 +143,7 @@ export function MyPageUserInfoSection({ user, onLogout }) {
             confirmPassword: '',
         });
         setPasswordError('');
+        setNicknameError('');
     };
 
     const handleWithdraw = async () => {
@@ -161,7 +182,8 @@ export function MyPageUserInfoSection({ user, onLogout }) {
                 window.location.reload();
             }, 100);
         } catch (error) {
-            alert(error.message || '회원 탈퇴에 실패했습니다.');
+            const errorMessage = getErrorMessage(error.message);
+            alert(errorMessage);
         } finally {
             setIsWithdrawing(false);
         }
@@ -206,10 +228,19 @@ export function MyPageUserInfoSection({ user, onLogout }) {
                                     <Input
                                         id="edit-nickname"
                                         value={editForm.nickname}
-                                        onChange={(e) => setEditForm({ ...editForm, nickname: e.target.value })}
+                                        onChange={(e) => {
+                                            setEditForm({ ...editForm, nickname: e.target.value });
+                                            setNicknameError('');
+                                        }}
                                         placeholder="닉네임을 입력하세요"
                                         minLength={2}
+                                        className={nicknameError ? 'border-red-500 focus-visible:ring-red-500' : ''}
                                     />
+                                    {nicknameError ? (
+                                        <p className="text-xs text-red-500">{nicknameError}</p>
+                                    ) : (
+                                        <p className="text-xs text-gray-500">닉네임은 2자 이상이어야 합니다.</p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-password">새 비밀번호</Label>
@@ -282,10 +313,7 @@ export function MyPageUserInfoSection({ user, onLogout }) {
                     <div className="flex items-center gap-3">
                         <User className="w-4 h-4 text-gray-500" />
                         <span className="text-gray-500 w-16">닉네임</span>
-                        <span className="font-medium">{(() => {
-                            const nickname = user.nickname || user.name;
-                            return !nickname || nickname.startsWith('deletedUser_') ? '탈퇴한 사용자' : nickname;
-                        })()}</span>
+                        <span className="font-medium">{getUserDisplayName(user.nickname || user.name)}</span>
                     </div>
                     <Separator />
                     <div className="flex items-center gap-3">

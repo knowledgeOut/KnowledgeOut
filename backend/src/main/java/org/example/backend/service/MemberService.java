@@ -6,6 +6,8 @@ import org.example.backend.dto.request.UpdateMemberRequestDto;
 import org.example.backend.dto.response.MemberResponseDto;
 import org.example.backend.dto.response.MyAnswerResponseDto;
 import org.example.backend.dto.response.QuestionResponseDto;
+import org.example.backend.exception.BusinessException;
+import org.example.backend.exception.ErrorCode;
 import org.example.backend.repository.AnswerRepository;
 import org.example.backend.repository.MemberRepository;
 import org.example.backend.repository.QuestionLikeRepository;
@@ -29,15 +31,17 @@ public class MemberService {
     // 마이페이지 기본 정보
     @Transactional(readOnly = true)
     public MemberResponseDto getMember(Long id) {
-        Member member = memberRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         return MemberResponseDto.fromEntity(member);
     }
 
     public MemberResponseDto updateMember(Long id, UpdateMemberRequestDto request) {
-        Member member = memberRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         if (!member.isActive()) {
-            throw new IllegalArgumentException("탈퇴한 회원입니다.");
+            throw new BusinessException(ErrorCode.MEMBER_ALREADY_WITHDRAWN);
         }
 
         // 닉네임 변경 (새로운 닉네임 입력한 경우)
@@ -46,7 +50,7 @@ public class MemberService {
             if (memberRepository.existsByNickname(request.getNickname())) {
                 Member existingMember = memberRepository.findByNickname(request.getNickname()).orElseThrow();
                 if (!existingMember.getId().equals(id)) {
-                    throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+                    throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
                 }
             }
             // 닉네임 업데이트
@@ -57,11 +61,11 @@ public class MemberService {
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             // 비밀번호 길이 검증 (8자 이상)
             if (request.getPassword().length() < 8) {
-                throw new IllegalArgumentException("비밀번호는 8자 이상이어야 합니다.");
+                throw new BusinessException(ErrorCode.PASSWORD_POLICY_VIOLATION);
             }
             // 현재 비밀번호와 동일한지 확인
             if (passwordEncoder.matches(request.getPassword(), member.getPassword())) {
-                throw new IllegalArgumentException("현재 비밀번호와 동일한 비밀번호로는 변경할 수 없습니다.");
+                throw new BusinessException(ErrorCode.PASSWORD_SAME_AS_CURRENT);
             }
             // 비밀번호 암호화
             String encodedPassword = passwordEncoder.encode(request.getPassword());
@@ -72,7 +76,7 @@ public class MemberService {
     }
 
     public List<QuestionResponseDto> getMyQuestions(Long memberId) {
-        return questionRepository.findByMemberIdOrderByCreatedAtDesc(memberId)
+        return questionRepository.findByMemberIdAndStatusFalseOrderByCreatedAtDesc(memberId)
                 .stream()
                 .map(question -> {
                     long likeCount = questionLikeRepository.countByQuestionId(question.getId());
@@ -101,10 +105,10 @@ public class MemberService {
     @Transactional
     public void withdraw(Long id) {
         Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         if (!member.isActive()) {
-            throw new IllegalArgumentException("이미 탈퇴 처리된 회원입니다.");
+            throw new BusinessException(ErrorCode.MEMBER_ALREADY_WITHDRAWN);
         }
 
         member.withdraw();
