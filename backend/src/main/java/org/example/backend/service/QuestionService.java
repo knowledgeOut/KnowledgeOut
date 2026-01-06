@@ -208,7 +208,14 @@ public class QuestionService {
 
         // 관리자가 아니고 작성자도 아닌 경우 삭제 권한 없음
         boolean isAdmin = currentMember.getRole() == org.example.backend.domain.member.Role.ROLE_ADMIN;
-        boolean isAuthor = question.getMember().getEmail().equals(email);
+        
+        // 작성자 확인: 탈퇴한 사용자의 경우 email이 null이므로 null 체크 필요
+        Member questionAuthor = question.getMember();
+        boolean isAuthor = false;
+        if (questionAuthor != null && questionAuthor.getEmail() != null) {
+            isAuthor = questionAuthor.getEmail().equals(email);
+        }
+        // 탈퇴한 사용자의 질문은 일반 사용자가 삭제할 수 없음 (관리자만 가능)
         
         if (!isAdmin && !isAuthor) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
