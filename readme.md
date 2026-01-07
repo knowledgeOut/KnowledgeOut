@@ -93,6 +93,16 @@ KnowledgeOut/
 
 ## 🧪 테스트
 
+### 테스트 데이터 삽입 SQL
+- [테스트데이터_삽입_SQL](./테스트데이터_SQL.md)
+- 테스트 데이터가 필요할 경우 해당 SQL 명령어 실행
+
+### Docker-compose
+- docker-compose.yml 파일과 동일한 디렉토리에 MY_SQL_PASSWORD 값을 설정한 .env 파일 필요
+```
+docker-compose up -d
+```
+
 ### Backend 테스트
 ```bash
 cd backend
