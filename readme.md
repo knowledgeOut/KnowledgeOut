@@ -10,7 +10,6 @@
 
 ## 🚀 주요 기능
 
----
 ### 사용자 기능
 - **회원 관리**: 회원가입, 로그인, 로그아웃, 회원 정보 수정, 회원 탈퇴
 - **질문 관리**: 질문 작성, 수정, 삭제, 검색, 필터링
@@ -24,7 +23,6 @@
 
 ## 🛠 기술 스택
 
----
 [![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.9-green?style=flat-square&logo=springboot)](https://spring.io/projects/spring-boot)
 [![Next.js](https://img.shields.io/badge/Next.js-16.1.1-black?style=flat-square&logo=next.js)](https://nextjs.org/)
@@ -122,7 +120,6 @@ npm run dev
 
 ## 🛠️ 프로젝트 트러블슈팅 리포트 (Troubleshooting Report)
 
----
 
 ## 1. 403 권한 문제와 JPA Lazy Loading(500 에러) 연쇄 발생
 
@@ -142,7 +139,6 @@ npm run dev
 1.  **보안 설정**: `SecurityConfig`에 `requestMatchers(HttpMethod.GET, "/questions/**").permitAll()` 추가.
 2.  **DTO 도입**: Transaction이 살아있는 **Service 계층 안에서** 필요한 데이터를 모두 조회하여 `ResponseDto`로 변환 후 반환하도록 구조 변경.
 
----
 
 ## 2. 질문 카드 UI 중복 및 유지보수 효율성 문제
 
@@ -158,7 +154,6 @@ npm run dev
 ### 4. 얻은 인사이트 (Insight)
 * UI는 화면 단위가 아닌 **도메인 단위**로 설계해야 유지보수성과 확장성이 높아진다는 점을 체감함.
 
----
 
 ## 3. 질문 삭제 시 연관 데이터 제약 조건 및 이력 관리 문제
 
@@ -174,7 +169,6 @@ npm run dev
 ### 4. 얻은 인사이트 (Insight)
 * 삭제 기능은 단순 구현 문제가 아니라 **도메인과 데이터 흐름을 고려한 설계 문제**라는 점을 인식함.
 
----
 
 ## 4. 탈퇴 회원의 닉네임 처리 및 데이터 정합성 문제
 
@@ -187,7 +181,6 @@ npm run dev
 ### 3. 해결 방법 (Solution)
 * 닉네임을 `null`로 바꾸는 대신 **닉네임 마스킹 처리**를 도입하고, 탈퇴 여부에 따라 화면 출력을 다르게 하도록 수정.
 
----
 
 ## 5. 탈퇴 회원의 질문 삭제 시 관리자 권한 로직 오류
 
@@ -200,7 +193,6 @@ npm run dev
 ### 3. 해결 방법 (Solution)
 * 질문 작성자 인증 기본값을 `false`로 설정하고, **회원 정보와 이메일 정보가 존재할 경우에만** 이메일 비교 로직을 수행하도록 수정하여 해결.
 
----
 
 ## 6. 데브 업데이트 후 DB 스키마 불일치로 인한 삭제 기능 오류
 
