@@ -1,0 +1,27 @@
+### 1. 질문 목록 조회
+GET http://localhost:8080/api/knowledgeout/questions?page=0&size=10
+
+### 2. 답변 등록
+POST http://localhost:8080/api/knowledgeout/questions/1/answers
+Content-Type: application/json
+
+{
+  "content": "답변이 정상적으로 등록되었습니다! 🎉"
+}
+
+### 3. 질문 상세 조회 - 답변 개수(answerCount) 확인
+GET http://localhost:8080/api/knowledgeout/questions/1
+
+### 4-1. 답변 상태 조회 - 답변완료
+GET http://localhost:8080/api/knowledgeout/questions?status=ANSWERED
+
+### 4-2. 답변 상태 조회 - 미답변
+GET http://localhost:8080/api/knowledgeout/questions?status=WAITING
+
+### 5. 존재하지 않는 질문에 답변
+POST http://localhost:8080/api/knowledgeout/questions/9999/answers
+Content-Type: application/json
+
+{
+  "content": "답변이 정상적으로 등록되었습니다! 🎉"
+}

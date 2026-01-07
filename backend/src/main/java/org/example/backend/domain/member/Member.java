@@ -1,0 +1,108 @@
+package org.example.backend.domain.member;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.example.backend.domain.answer.Answer;
+import org.example.backend.domain.question.Question;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+@Entity
+@EntityListeners(AuditingEntityListener.class)
+@Getter
+@NoArgsConstructor
+@Table(name = "members")
+public class Member {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(nullable = false, unique = true)
+    private String nickname;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MemberStatus status;
+
+    @LastModifiedDate
+    @Column(name = "modified_at")
+    private LocalDateTime modifiedAt;
+
+    @OneToMany(mappedBy = "member")
+    private List<Question> questions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "member")
+    private List<Answer> answers = new ArrayList<>();
+
+    public static Member create(String email, String password, String nickname) {
+        Member member = new Member();
+        member.email = email;
+        member.password = password;
+        member.nickname = nickname;
+        member.role = Role.ROLE_USER;
+        member.status = MemberStatus.ACTIVE;
+        return member;
+    }
+
+    // 탈퇴 처리
+    public void withdraw() {
+        this.status = MemberStatus.DELETED;
+        this.email = null;
+        this.nickname = generateDeletedUserNickname();
+    }
+
+    // 탈퇴한 사용자용 닉네임 생성 (deletedUser_ + 12자리 무작위 문자열)
+    private String generateDeletedUserNickname() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder(12);
+        
+        for (int i = 0; i < 12; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        
+        return "deletedUser_" + sb.toString();
+    }
+
+    public boolean isActive() {
+        return this.status.equals(MemberStatus.ACTIVE);
+    }
+
+    // 사용자 정보 수정
+    public void update(String email, String nickname) {
+        if (email != null && !email.isBlank()) {
+            this.email = email;
+        }
+        if (nickname != null && !nickname.isBlank()) {
+            this.nickname = nickname;
+        }
+    }
+
+    // 비밀번호 변경
+    public void updatePassword(String password) {
+        if (password != null && !password.isBlank()) {
+            this.password = password;
+        }
+    }
+}

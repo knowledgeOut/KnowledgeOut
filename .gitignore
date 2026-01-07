@@ -1,5 +1,5 @@
 # ============================================
-# OS 관련 파일
+# 1. OS 및 에디터 관련 (공통)
 # ============================================
 .DS_Store
 .DS_Store?
@@ -10,39 +10,28 @@ ehthumbs.db
 Thumbs.db
 *~
 
-# ============================================
-# IDE 관련 파일
-# ============================================
-# IntelliJ IDEA
-backend/.idea/
+# IDE Settings
+.idea/
 *.iml
 *.iws
 *.ipr
-out/
-.idea_modules/
-
-# Eclipse
+.vscode/
+*.code-workspace
 .classpath
 .project
 .settings/
 bin/
 
-# VS Code
-.vscode/
-*.code-workspace
-
 # ============================================
-# Spring Boot / Gradle 관련
+# 2. Backend (Spring Boot & Gradle)
 # ============================================
-# Gradle
+# Gradle Caching & Build
 .gradle/
 build/
-!gradle/wrapper/gradle-wrapper.jar
-!gradle/wrapper/gradle-wrapper.properties
+out/
 gradle-app.setting
-!gradle-wrapper.jar
 
-# Spring Boot
+# Spring Boot Build Artifacts (빌드 결과물 무시)
 *.class
 *.log
 *.jar
@@ -51,151 +40,84 @@ gradle-app.setting
 *.nar
 hs_err_pid*
 
-# 빌드 출력
-out/
-target/
-!**/src/main/**/target/
-!**/src/test/**/target/
+
+# Wrapper jar는 프로젝트 실행에 필수이므로 무시 목록에서 제외
+!gradle/wrapper/gradle-wrapper.jar
+
+# Exception: 실행 가능한 Jar가 아닌 소스 내의 라이브러리 등은 무시
+!**/src/main/**/lib/
+
+# Local configuration
+**/application-*.yml
+**/application-*.properties
+
 
 # ============================================
-# 테스트 관련 (전부 제외)
-# ============================================
-# 테스트 소스 코드
-**/src/test/
-**/test/
-**/tests/
-**/__tests__/
-**/*.test.*
-**/*.spec.*
-**/*Test.*
-**/*Tests.*
-**/*_test.*
-**/*_spec.*
-
-# 테스트 결과 및 리포트
-**/test-results/
-**/test-output/
-**/coverage/
-**/.nyc_output/
-**/junit.xml
-**/TEST-*.xml
-**/surefire-reports/
-**/failsafe-reports/
-**/test-reports/
-
-# 테스트 실행 파일
-**/.pytest_cache/
-**/.coverage
-**/htmlcov/
-**/.tox/
-**/.hypothesis/
-
-# ============================================
-# Next.js / Frontend 관련
+# 3. Frontend (Next.js & Node)
 # ============================================
 # Dependencies
 node_modules/
 .pnp
 .pnp.js
 
-# Testing
-coverage/
-.nyc_output/
-
-# Next.js
+# Next.js Build Output
 .next/
-out/
 dist/
-build/
+# build/ 는 위 Backend 섹션에서 이미 처리됨
 
-# Production
-*.tsbuildinfo
+# Testing Coverage
+coverage/
+
+# Next.js Config
 next-env.d.ts
+*.tsbuildinfo
 
-# Debug
+# Debug Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Local env files
-.env
-.env*.local
-.env.development.local
-.env.test.local
-.env.production.local
-
 # Vercel
 .vercel
 
-# TypeScript
-*.tsbuildinfo
+# ============================================
+# 4. 데이터베이스 & Docker
+# ============================================
+# Docker Volume (DB 데이터 저장소)
+mysql-data/
+
+# Docker override files
+docker-compose.override.yml
 
 # ============================================
-# 환경 변수 및 설정 파일
+# 5. 환경 변수 (보안 필수)
 # ============================================
-# 환경 변수
 .env
 .env.local
-.env.development
-.env.production
-.env.test
-.env*.local
+.env.*.local
 *.env
 
-# 설정 파일 (민감 정보 포함 가능)
-**/application-local.yml
-**/application-local.properties
-**/application-dev.yml
-**/application-dev.properties
-**/application-prod.yml
-**/application-prod.properties
-**/secrets.yml
-**/secrets.properties
+# ============================================
+# 6. 테스트 결과물
+# ============================================
+**/test-results/
+**/test-output/
+**/junit.xml
+**/TEST-*.xml
+**/surefire-reports/
+**/failsafe-reports/
 
 # ============================================
-# 로그 파일
+# 7. 기타
 # ============================================
-*.log
-logs/
-*.log.*
-log/
-
-# ============================================
-# 임시 파일
-# ============================================
-*.tmp
-*.temp
-*.swp
-*.swo
-*~
-.cache/
-tmp/
-temp/
-
-# ============================================
-# Docker 관련
-# ============================================
-# Docker Compose override files
-docker-compose.override.yml
-docker-compose.*.local.yml
-
-# ============================================
-# 기타
-# ============================================
-# 백업 파일
 *.bak
 *.backup
 *.old
+*.swp
 
-# 압축 파일 (필요시 제외)
-# *.zip
-# *.tar
-# *.tar.gz
+# 로그 폴더
+logs/
+log/
 
-# 패키지 매니저
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
-!backend/*
+*.mdc
